@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card p-4">
+      <h3 class="section-title">{% if setup %}Complete your profile{% else %}My profile{% endif %}</h3>
+      <form method="post">{% include "includes/form.html" %}<button class="btn btn-teal">Save</button></form>
+    </div>
+  </div>
+  {% if not setup %}
+  <div class="col-lg-5">
+    <div class="card p-4">
+      <h5><i class="bi bi-shield-lock text-teal"></i> Privacy &amp; consent</h5>
+      <p class="small">Consent given {{ profile.consent_at|date:"d M Y" }}. Lafiya follows the Nigeria Data Protection Act 2023:
+        consent-first, minimal data, and dashboards only show aggregated, anonymous numbers.</p>
+      <a class="btn btn-outline-teal mb-3" href="{% url 'export_my_data' %}"><i class="bi bi-download"></i> Download my data</a>
+      <form method="post" action="{% url 'delete_my_data' %}" onsubmit="return confirm('This permanently deletes your account and all health records. Continue?');">
+        {% csrf_token %}<button class="btn btn-outline-danger"><i class="bi bi-trash"></i> Delete my account and data</button>
+      </form>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

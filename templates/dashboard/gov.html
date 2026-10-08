@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Government dashboard{% endblock %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div>
+    <h2 class="section-title mb-0"><i class="bi bi-map"></i> Lafiya live dashboard</h2>
+    <div class="text-muted small">Risk and response on one view · aggregated and anonymised (NDPA 2023)</div>
+  </div>
+  <div class="d-flex flex-wrap gap-2">
+    <form method="get"><select name="state" class="form-select" onchange="this.form.submit()">
+      <option value="">All states</option>
+      {% for s in states %}<option value="{{ s.id }}" {% if state and s.id == state.id %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+    </select></form>
+    <a class="btn btn-outline-teal" href="{% url 'gov_export' %}{% if state %}?state={{ state.id }}{% endif %}"><i class="bi bi-filetype-csv"></i> Export</a>
+    <a class="btn btn-outline-teal" href="{% url 'api_index' %}" target="_blank"><i class="bi bi-braces"></i> Open API</a>
+    <form method="post" action="{% url 'gov_run_loop' %}">{% csrf_token %}<button class="btn btn-teal" title="Sense → Match → Speak → Act"><i class="bi bi-arrow-repeat"></i> Run Intelligence Loop</button></form>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-4 col-xl"><div class="card p-3 kpi h-100"><div class="value">{{ kpi.enrolled }}</div><div class="label">Families reached</div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card p-3 kpi h-100"><div class="value">{{ kpi.pregnant }}</div><div class="label">Pregnant women enrolled</div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card p-3 kpi h-100"><div class="value">{{ kpi.penta3_coverage|default:"–" }}%</div><div class="label">Penta3 coverage ({{ kpi.children_u5 }} under-5s)</div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card p-3 kpi h-100"><div class="value text-danger">{{ kpi.zero_dose }}</div><div class="label">Zero-dose children</div></div></div>
+  <div class="col-6 col-md-4 col-xl"><div class="card p-3 kpi h-100"><div class="value">{{ kpi.lgas_elevated }}/{{ kpi.lgas }}</div><div class="label">LGAs at high climate-health risk</div></div></div>
+</div>
+
+<div class="row g-3 mb-4">
+  <div class="col-md-3"><div class="card p-3 h-100"><div class="label small text-muted">Care completed</div><div class="fs-4 fw-bold text-teal">{{ kpi.anc_attendance|default:"–" }}%</div><div class="small">ANC visits attended on schedule</div></div></div>
+  <div class="col-md-3"><div class="card p-3 h-100"><div class="label small text-muted">Risk acted on</div><div class="fs-4 fw-bold text-teal">{{ kpi.alert_action_rate|default:"–" }}%</div><div class="small">of {{ kpi.alerts_sent }} alerts acted on ({{ kpi.alert_open_rate|default:"–" }}% opened)</div></div></div>
+  <div class="col-md-3"><div class="card p-3 h-100"><div class="label small text-muted">Access improved</div><div class="fs-4 fw-bold text-teal">{{ kpi.referral_completion|default:"–" }}%</div><div class="small">of {{ kpi.referrals }} referrals completed at facilities</div></div></div>
+  <div class="col-md-3"><div class="card p-3 h-100"><div class="label small text-muted">Families by language</div>
+    {% for name, n in kpi.by_language %}<div class="d-flex justify-content-between small"><span>{{ name }}</span><span>{{ n }}</span></div>{% endfor %}</div></div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span><i class="bi bi-patch-check text-teal"></i> Real-world validation — voice-first access (excludes demo data)</span>
+    <a class="btn btn-sm btn-outline-teal" href="{% url 'gov_evidence_export' %}"><i class="bi bi-filetype-csv"></i> Anonymised interaction log</a>
+  </div>
+  <div class="card-body">
+    <div class="d-flex justify-content-between small mb-1"><span><strong>{{ evidence.total }}</strong> / {{ evidence.target }} real user interactions</span><span>{{ evidence.users }} people</span></div>
+    <div class="progress mb-3"><div class="progress-bar {% if evidence.total >= evidence.target %}bg-success{% else %}bg-warning{% endif %}" style="width: {{ evidence.progress }}%"></div></div>
+    <div class="row g-3 small">
+      <div class="col-6 col-md-3"><div class="fw-bold fs-5 text-teal">{{ evidence.voice }}</div>voice questions ({{ evidence.voice_natlas_asr }} via N-ATLaS ASR)</div>
+      <div class="col-6 col-md-3"><div class="fw-bold fs-5 text-teal">{{ evidence.replies_natlas }}</div>replies written by N-ATLaS</div>
+      <div class="col-6 col-md-3"><div class="fw-bold fs-5 text-teal">{{ evidence.referrals }}</div>referrals · {{ evidence.reminders }} reminders · {{ evidence.emergencies }} emergencies</div>
+      <div class="col-6 col-md-3"><div class="fw-bold fs-5 text-teal">{% if evidence.median_latency_ms is not None %}{{ evidence.median_latency_ms }} ms{% else %}–{% endif %}</div>median response time</div>
+    </div>
+    {% if evidence.total %}<div class="small text-muted mt-2">
+      Channels: {% for c, n in evidence.by_channel %}{{ c }} {{ n }}{% if not forloop.last %}, {% endif %}{% endfor %} ·
+      Languages: {% for l, n in evidence.by_language %}{{ l }} {{ n }}{% if not forloop.last %}, {% endif %}{% endfor %} ·
+      {{ evidence.first|slice:":10" }} → {{ evidence.last|slice:":10" }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="card mb-4">
+  <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <span>LGA map</span>
+    <div class="btn-group btn-group-sm" role="group" id="layers">
+      <button class="btn btn-outline-teal active" data-layer="malaria">Malaria</button>
+      <button class="btn btn-outline-teal" data-layer="heat">Heat</button>
+      <button class="btn btn-outline-teal" data-layer="flood">Flood</button>
+      <button class="btn btn-outline-teal" data-layer="penta3">Penta3 coverage</button>
+      <button class="btn btn-outline-teal" data-layer="zero">Zero-dose</button>
+    </div>
+  </div>
+  <div class="card-body p-2"><div id="map" class="map-lg"></div><div id="legend" class="small mt-2"></div></div>
+</div>
+
+<div class="card">
+  <div class="card-header">LGA table — immunization gaps and climate risk <span class="small text-muted fw-normal">{% if state %}· all {{ table_rows|length }} LGAs in {{ state.name }}{% else %}· {{ table_rows|length }} LGAs with enrolled families (choose a state to see all its LGAs){% endif %}</span></div>
+  <div class="table-responsive">
+  <table class="table table-sm table-hover mb-0">
+    <thead><tr><th>State</th><th>LGA</th><th>Families</th><th>Pregnant</th><th>Under-5</th><th>Penta1</th><th>Penta3</th><th>MCV1</th><th>Zero-dose</th><th>Malaria</th><th>Heat</th><th>Flood</th><th>Alerts acted</th><th>Referrals done</th></tr></thead>
+    <tbody>
+    {% for r in table_rows %}
+      <tr>
+        <td class="small">{{ r.state }}</td><td>{{ r.lga }}</td><td>{{ r.enrolled }}</td><td>{{ r.pregnant }}</td><td>{{ r.children_u5 }}</td>
+        <td>{{ r.penta1_coverage|default:"–" }}%</td>
+        <td class="{% if r.penta3_coverage is not None and r.penta3_coverage < 60 %}text-danger fw-bold{% endif %}">{{ r.penta3_coverage|default:"–" }}%</td>
+        <td>{{ r.mcv1_coverage|default:"–" }}%</td>
+        <td class="{% if r.zero_dose %}text-danger{% endif %}">{{ r.zero_dose }}</td>
+        <td>{% if r.malaria_level %}<span class="risk-pill risk-{{ r.malaria_level }}" title="{{ r.malaria_why }}">{{ r.malaria_score }}</span>{% endif %}</td>
+        <td>{% if r.heat_level %}<span class="risk-pill risk-{{ r.heat_level }}" title="{{ r.heat_why }}">{{ r.heat_score }}</span>{% endif %}</td>
+        <td>{% if r.flood_level %}<span class="risk-pill risk-{{ r.flood_level }}" title="{{ r.flood_why }}">{{ r.flood_score }}</span>{% endif %}</td>
+        <td class="small">{{ r.alerts_acted }}/{{ r.alerts_sent }}</td>
+        <td class="small">{{ r.referrals_completed }}/{{ r.referrals }}</td>
+      </tr>
+    {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="card-footer small text-muted">Coverage = share of eligible children (due date + 4 weeks passed) who received the dose. Zero-dose = eligible but never received Penta1 (WHO definition). Population and facility data are illustrative for the MVP.</div>
+</div>
+{{ rows|json_script:"lga-data" }}
+{{ facilities|json_script:"facility-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const rows = JSON.parse(document.getElementById("lga-data").textContent);
+  const facilities = JSON.parse(document.getElementById("facility-data").textContent);
+  const RISK = {low: "#2e8b57", moderate: "#d4a017", high: "#e8704f", very_high: "#b3261e"};
+  const map = L.map("map").setView([9.08, 8.2], 6);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 18, attribution: "© OpenStreetMap"}).addTo(map);
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  const facLayer = L.layerGroup(facilities.map(([lat, lon, name, type]) => L.circleMarker([lat, lon], {radius: 3, color: "#0f5c6e", fillOpacity: 1})
+    .bindPopup(`<strong>${esc(name)}</strong><br>${esc(type)}`)));
+  L.control.layers(null, {"Hospitals (GRID3 / Health Facility Registry)": facLayer}).addTo(map);
+  let group = L.layerGroup().addTo(map);
+
+  function coverageColor(v) {
+    if (v === null) return "#999";
+    return v >= 85 ? RISK.low : v >= 70 ? RISK.moderate : v >= 50 ? RISK.high : RISK.very_high;
+  }
+  const LEGENDS = {
+    risk: "Risk level: <span style='color:#2e8b57'>●</span> low <span style='color:#d4a017'>●</span> moderate <span style='color:#e8704f'>●</span> high <span style='color:#b3261e'>●</span> very high",
+    penta3: "Penta3 coverage: <span style='color:#2e8b57'>●</span> ≥85% <span style='color:#d4a017'>●</span> 70–84% <span style='color:#e8704f'>●</span> 50–69% <span style='color:#b3261e'>●</span> &lt;50%",
+    zero: "Circle size = number of zero-dose children",
+  };
+
+  function draw(layer) {
+    group.clearLayers();
+    const pts = [];
+    rows.forEach(r => {
+      let color, radius = 9, label;
+      if (["malaria", "heat", "flood"].includes(layer)) {
+        color = RISK[r[layer + "_level"]] || "#999";
+        radius = 6 + (r[layer + "_score"] || 0) / 8;
+        label = `${layer} risk: ${r[layer + "_level"] || "n/a"} (${r[layer + "_score"] ?? "–"}/100)<br><em>${r[layer + "_why"] || ""}</em>`;
+      } else if (layer === "penta3") {
+        color = coverageColor(r.penta3_coverage);
+        label = `Penta3 coverage: ${r.penta3_coverage ?? "–"}%<br>Penta1: ${r.penta1_coverage ?? "–"}% · MCV1: ${r.mcv1_coverage ?? "–"}%`;
+      } else {
+        color = r.zero_dose ? "#b3261e" : "#2e8b57";
+        radius = 5 + Math.sqrt(r.zero_dose) * 4;
+        label = `Zero-dose children: ${r.zero_dose} of ${r.children_u5} under-5s`;
+      }
+      pts.push([r.lat, r.lon]);
+      L.circleMarker([r.lat, r.lon], {radius, color, fillColor: color, fillOpacity: .65, weight: 2})
+        .bindPopup(`<strong>${r.lga}, ${r.state}</strong><br>${label}<br>Families: ${r.enrolled} · Pregnant: ${r.pregnant}`)
+        .addTo(group);
+    });
+    document.getElementById("legend").innerHTML = ["malaria", "heat", "flood"].includes(layer) ? LEGENDS.risk : LEGENDS[layer];
+    if (pts.length) map.fitBounds(pts, {padding: [30, 30], maxZoom: 10});
+  }
+  document.querySelectorAll("#layers button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll("#layers button").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    draw(b.dataset.layer);
+  }));
+  draw("malaria");
+</script>
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Alerts{% endblock %}
+{% block content %}
+<h2 class="section-title"><i class="bi bi-bell"></i> My alerts</h2>
+<p class="text-muted small">Personal alerts in {{ profile.language_name }}. Tap <i class="bi bi-volume-up"></i> to listen.</p>
+{% for a in current %}
+<div class="card mb-3 {% if not a.opened_at %}unread{% endif %}" data-alert="{{ a.pk }}" data-opened="{{ a.opened_at|yesno:'1,0' }}">
+  <div class="card-body">
+    <div class="d-flex justify-content-between flex-wrap gap-2">
+      <h5 class="mb-1"><i class="bi bi-{{ a.icon }} text-orange"></i> {{ a.title }}</h5>
+      <span class="small text-muted">{{ a.scheduled_for|date:"d M Y" }} · {{ a.get_kind_display }}{% if a.generated_by == "n-atlas" %} · <span class="badge bg-success">N-ATLAS</span>{% endif %}</span>
+    </div>
+    <p class="mb-2 alert-text" lang="{{ a.language }}">{{ a.message }}</p>
+    {% if a.reason %}<p class="small text-muted mb-2"><i class="bi bi-info-circle"></i> <strong>Why:</strong> {{ a.reason }}</p>{% endif %}
+    <div class="d-flex flex-wrap gap-2">
+      <button class="btn btn-sm btn-outline-teal speak" data-lang="{{ a.language }}"><i class="bi bi-volume-up"></i> Listen</button>
+      {% if a.facility %}<a class="btn btn-sm btn-outline-teal" target="_blank" href="https://www.openstreetmap.org/?mlat={{ a.facility.latitude }}&mlon={{ a.facility.longitude }}#map=16/{{ a.facility.latitude }}/{{ a.facility.longitude }}"><i class="bi bi-geo-alt"></i> {{ a.facility.name }}</a>{% endif %}
+      {% if a.acted_on_at %}<span class="btn btn-sm btn-success disabled"><i class="bi bi-check2"></i> Done</span>
+      {% else %}<form method="post" action="{% url 'alert_acted' a.pk %}">{% csrf_token %}<button class="btn btn-sm btn-teal"><i class="bi bi-check2"></i> I did this</button></form>{% endif %}
+    </div>
+  </div>
+</div>
+{% empty %}<div class="card p-4 text-muted">No alerts yet. Lafiya will tell you when something needs your attention.</div>{% endfor %}
+
+{% if upcoming %}
+<h5 class="section-title mt-4">Scheduled reminders</h5>
+<ul class="list-group">{% for a in upcoming %}<li class="list-group-item d-flex justify-content-between"><span><i class="bi bi-bell"></i> {{ a.title }}</span><span class="small text-muted">{{ a.scheduled_for|date:"d M Y" }}</span></li>{% endfor %}</ul>
+{% endif %}
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/voice.js' %}"></script>
+<script>
+  document.querySelectorAll("[data-alert]").forEach(card => {
+    if (card.dataset.opened === "0") {
+      fetch(`/alerts/${card.dataset.alert}/opened/`, {method: "POST", headers: {"X-CSRFToken": window.csrfToken}});
+    }
+    card.querySelector(".speak").addEventListener("click", e => {
+      LafiyaVoice.speak(card.querySelector(".alert-text").textContent, e.currentTarget.dataset.lang);
+    });
+  });
+</script>
+{% endblock %}

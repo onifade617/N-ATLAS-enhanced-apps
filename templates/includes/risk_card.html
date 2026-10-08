@@ -1,0 +1,16 @@
+<div class="card h-100 risk-border-{{ r.level }}">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start">
+      <h6 class="mb-1">
+        {% if r.hazard == "malaria" %}<i class="bi bi-bug"></i>{% elif r.hazard == "heat" %}<i class="bi bi-thermometer-sun"></i>{% else %}<i class="bi bi-water"></i>{% endif %}
+        {{ r.get_hazard_display }}
+      </h6>
+      <span class="risk-pill risk-{{ r.level }}">{{ r.get_level_display }}</span>
+    </div>
+    <div class="small text-muted mb-2">Score {{ r.score }}/100 ·
+      {% if r.trend == "rising" %}<span class="text-danger"><i class="bi bi-arrow-up-right"></i> rising</span>
+      {% elif r.trend == "falling" %}<span class="text-success"><i class="bi bi-arrow-down-right"></i> falling</span>
+      {% else %}{{ r.trend }}{% endif %}</div>
+    <p class="small mb-0"><strong>Why:</strong> {{ r.explanation }}</p>
+  </div>
+</div>

@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}MamaCare{% endblock %}
+{% block content %}
+<h2 class="section-title"><i class="bi bi-heart"></i> MamaCare</h2>
+<div class="row g-4">
+  <div class="col-lg-7">
+    {% if pregnancy %}
+    <div class="card mb-4">
+      <div class="card-body">
+        <div class="d-flex justify-content-between flex-wrap">
+          <h4 class="mb-0">{{ pregnancy.weeks }} weeks · trimester {{ pregnancy.trimester }}</h4>
+          <div class="text-end small">Expected delivery <strong>{{ pregnancy.edd|date:"d M Y" }}</strong><br>{{ pregnancy.days_to_edd }} days to go</div>
+        </div>
+        <div class="progress my-3"><div class="progress-bar bg-warning" style="width: {{ pregnancy.progress_percent }}%"></div></div>
+        <p class="mb-2">{{ week_message }}</p>
+        <ul class="small mb-0">{% for tip in trimester_tips %}<li>{{ tip }}</li>{% endfor %}</ul>
+      </div>
+    </div>
+    <div class="card mb-4">
+      <div class="card-header">Antenatal schedule (WHO 8-contact model)</div>
+      <table class="table table-sm mb-0">
+        <thead><tr><th>#</th><th>Week</th><th>Date</th><th>Status</th><th></th></tr></thead>
+        <tbody>
+        {% for v in visits %}
+          <tr>
+            <td>{{ v.contact_number }}</td><td>{{ v.gestation_week }}</td><td>{{ v.scheduled_date|date:"d M Y" }}</td>
+            <td class="status-{{ v.status_now }}">{{ v.status_now|capfirst }}{% if v.attended_date %} {{ v.attended_date|date:"d M" }}{% endif %}</td>
+            <td><form method="post" action="{% url 'mamacare_mark_visit' v.pk %}">{% csrf_token %}
+              <button class="btn btn-sm {% if v.attended_date %}btn-outline-secondary{% else %}btn-outline-teal{% endif %}">{% if v.attended_date %}Undo{% else %}I attended{% endif %}</button></form></td>
+          </tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <form method="post" action="{% url 'mamacare_end_pregnancy' pregnancy.pk %}" class="mb-4">{% csrf_token %}
+      <button class="btn btn-outline-teal"><i class="bi bi-balloon-heart"></i> My baby has been born</button></form>
+    {% else %}
+    <div class="card p-4 mb-4">
+      <h5>Track your pregnancy</h5>
+      <p class="small">Add the first day of your last period to get your due date, all 8 antenatal visits and weekly guidance.</p>
+      <a href="{% url 'mamacare_add_pregnancy' %}" class="btn btn-teal">Add pregnancy</a>
+    </div>
+    {% endif %}
+
+    <h5 class="section-title">Child milestones (to age five)</h5>
+    {% for k in kids %}
+      <div class="card mb-3">
+        <div class="card-header">{{ k.child.name }} · {{ k.child.age_display }}</div>
+        <div class="card-body small">
+          <div class="fw-semibold">By now most children:</div>
+          <ul>{% for m in k.now %}<li>{{ m.description }} <span class="text-muted">({{ m.age_months }} m)</span></li>{% endfor %}</ul>
+          {% if k.next %}<div class="fw-semibold">Coming next:</div>
+          <ul class="mb-0">{% for m in k.next %}<li>{{ m.description }} <span class="text-muted">({{ m.age_months }} m)</span></li>{% endfor %}</ul>{% endif %}
+        </div>
+      </div>
+    {% empty %}<p class="small text-muted">Add children in <a href="{% url 'immunitrack_add_child' %}">ImmuniTrack</a> to see milestones.</p>{% endfor %}
+  </div>
+
+  <div class="col-lg-5">
+    <div class="card border-danger">
+      <div class="card-header text-danger"><i class="bi bi-exclamation-triangle-fill"></i> Danger signs — go to a facility immediately or call 112</div>
+      <div class="card-body small">
+        {% regroup danger_signs by get_category_display as groups %}
+        {% for g in groups %}
+          <div class="fw-semibold mt-2">{{ g.grouper }}</div>
+          <ul class="mb-1">{% for d in g.list %}<li>{{ d.sign }}</li>{% endfor %}</ul>
+        {% endfor %}
+        <a href="{% url 'facilities' %}?service=emergency" class="btn btn-danger btn-sm mt-2"><i class="bi bi-geo-alt"></i> Nearest emergency care</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Care Navigator{% endblock %}
+{% block content %}
+<div class="row g-4">
+  <div class="col-lg-8">
+    <div class="d-flex flex-wrap justify-content-between align-items-center mb-2 gap-2">
+      <h2 class="section-title mb-0"><i class="bi bi-mic"></i> Care Navigator</h2>
+      <div class="d-flex gap-2 align-items-center">
+        <select id="lang" class="form-select form-select-sm" style="width:auto">
+          {% for code, name in LANGUAGES %}<option value="{{ code }}" {% if code == profile.language %}selected{% endif %}>{{ name }}</option>{% endfor %}
+        </select>
+        <div class="form-check form-switch mb-0 small"><input class="form-check-input" type="checkbox" id="autospeak" checked><label class="form-check-label" for="autospeak">Speak replies</label></div>
+      </div>
+    </div>
+
+    <div id="chat" class="chat-window mb-3">
+      {% for m in history %}
+        <div class="bubble {{ m.role }}{% if m.emergency %} emergency{% endif %}">{{ m.text }}</div>
+      {% empty %}
+        <div class="bubble assistant">Hello {{ profile.first_name }}! I am Lafiya. Ask me by voice or text — about vaccines, pregnancy, malaria, heat, floods, blood pressure, diabetes, food, or the nearest clinic.</div>
+      {% endfor %}
+    </div>
+
+    <div id="suggestions" class="d-flex flex-wrap gap-2 mb-2"></div>
+
+    <form id="ask" class="d-flex gap-2 align-items-center">
+      <button type="button" id="mic" class="btn btn-teal mic-btn" title="Speak"><i class="bi bi-mic-fill fs-4"></i></button>
+      <input id="text" class="form-control form-control-lg" placeholder="Type or tap the mic and speak…" autocomplete="off">
+      <button class="btn btn-outline-teal btn-lg" id="send"><i class="bi bi-send"></i></button>
+    </form>
+    <div id="voice-note" class="small text-muted mt-1"></div>
+  </div>
+
+  <div class="col-lg-4">
+    <div class="card mb-3">
+      <div class="card-header"><i class="bi bi-geo-alt text-teal"></i> Suggested facilities</div>
+      <div class="card-body small" id="facilities">Ask a question and Lafiya will route you to the right service.</div>
+    </div>
+    <div class="card small">
+      <div class="card-body">
+        <p class="mb-2"><i class="bi bi-shield-check text-teal"></i> Grounded in WHO and NPHCDA guidance. Lafiya educates and refers — it never diagnoses.</p>
+        <p class="mb-0">Danger signs such as bleeding, fits, or difficulty breathing? <strong>Go to a facility now or call 112.</strong></p>
+        <p class="mt-2 mb-0 text-muted">Engine: {% if natlas_live %}N-ATLAS (live){% else %}grounded templates + browser speech — set <code>NATLAS_BASE_URL</code> to connect the N-ATLaS gateway{% endif %}</p>
+      </div>
+    </div>
+  </div>
+</div>
+{{ suggestions|json_script:"suggestions-data" }}
+<script>window.conversationId = {{ conversation.id|default:"null" }}; window.natlasAsr = {{ natlas_live|yesno:"true,false" }}; window.challengeMode = {{ challenge_mode|yesno:"true,false" }};</script>
+{% endblock %}
+{% block scripts %}
+<script src="{% static 'js/voice.js' %}"></script>
+<script src="{% static 'js/navigator.js' %}"></script>
+{% endblock %}

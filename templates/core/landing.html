@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Welcome{% endblock %}
+{% block content %}
+<section class="hero mb-4">
+  <div class="tagline mb-2">AI-powered community health · Maternal &amp; child care · Climate-health early warning · Powered by N-ATLAS</div>
+  <h1 class="display-5 fw-bold">Lafiya AI</h1>
+  <p class="lead mb-4">Protecting every mother, child and community, in every language, before risk becomes crisis.</p>
+  <div class="d-flex flex-wrap gap-2">
+    <a href="{% url 'signup' %}" class="btn btn-warning btn-lg"><i class="bi bi-person-plus"></i> Join free</a>
+    <a href="{% url 'login' %}" class="btn btn-outline-light btn-lg">Log in</a>
+    <a href="{% url 'climate' %}" class="btn btn-outline-light btn-lg"><i class="bi bi-cloud-sun"></i> Check my LGA's risk</a>
+  </div>
+  <p class="small mt-3 mb-0 opacity-75">Hausa · Yoruba · Igbo · Pidgin · English — by voice or text.</p>
+</section>
+
+<div class="row g-3 mb-4 text-center">
+  <div class="col-6 col-md-3"><div class="card p-3 h-100"><div class="stat">&gt;1 in 4</div><div class="small text-muted mt-2">of the world's maternal deaths occur in Nigeria</div></div></div>
+  <div class="col-6 col-md-3"><div class="card p-3 h-100"><div class="stat">~2.1M</div><div class="small text-muted mt-2">zero-dose children in Nigeria</div></div></div>
+  <div class="col-6 col-md-3"><div class="card p-3 h-100"><div class="stat">~1 in 4</div><div class="small text-muted mt-2">of global malaria cases occur in Nigeria</div></div></div>
+  <div class="col-6 col-md-3"><div class="card p-3 h-100"><div class="stat">~1 in 3</div><div class="small text-muted mt-2">Nigerian adults estimated to have hypertension</div></div></div>
+</div>
+
+<h4 class="section-title">One platform, four integrated services</h4>
+<div class="row g-3 mb-4">
+  <div class="col-md-6 col-lg-3"><div class="card h-100 p-3"><h5><i class="bi bi-mic text-teal"></i> Care Navigator</h5><p class="small mb-0">Voice and chat health guidance in your language, prevention advice, symptom-to-service referral and the nearest open facility.</p></div></div>
+  <div class="col-md-6 col-lg-3"><div class="card h-100 p-3"><h5><i class="bi bi-heart text-teal"></i> MamaCare</h5><p class="small mb-0">Pregnancy tracking, the 8-contact antenatal schedule, danger-sign education and child milestones to age five.</p></div></div>
+  <div class="col-md-6 col-lg-3"><div class="card h-100 p-3"><h5><i class="bi bi-shield-plus text-teal"></i> ImmuniTrack</h5><p class="small mb-0">A personal vaccine schedule with reminders, and coverage-gap mapping by State, LGA and ward.</p></div></div>
+  <div class="col-md-6 col-lg-3"><div class="card h-100 p-3"><h5><i class="bi bi-cloud-sun text-teal"></i> ClimateGuard</h5><p class="small mb-0">Live weather drives malaria, heat and flood risk per LGA, with personalised early-warning alerts that say why.</p></div></div>
+</div>
+
+<h4 class="section-title">The Intelligence Loop</h4>
+<div class="row g-2 mb-4">
+  <div class="col-md"><div class="loop-step"><div class="num">1. Sense</div><div class="small">Weather, outbreak and coverage data ingested daily</div></div></div>
+  <div class="col-md"><div class="loop-step"><div class="num">2. Match</div><div class="small">Risk is matched to the people it affects: pregnant women, under-5s, people with hypertension</div></div></div>
+  <div class="col-md"><div class="loop-step"><div class="num">3. Speak</div><div class="small">N-ATLAS writes and voices a personal message in each user's language</div></div></div>
+  <div class="col-md"><div class="loop-step"><div class="num">4. Act</div><div class="small">The Care Navigator routes them to the nearest service</div></div></div>
+  <div class="col-md"><div class="loop-step"><div class="num">5. See</div><div class="small">Government sees risk and response on one live dashboard</div></div></div>
+</div>
+
+<div class="card p-3 bg-mint">
+  <div><strong>Demo accounts</strong> (password <code>lafiya123</code>):</div>
+  <div class="small"><code>funke</code> Yoruba mother with a 6-week-old · <code>amina</code> Hausa, pregnant, hypertension · <code>chinedu</code> Igbo, diabetes ·
+  <code>chw</code> health worker · <code>gov</code> government dashboard</div>
+</div>
+{% endblock %}

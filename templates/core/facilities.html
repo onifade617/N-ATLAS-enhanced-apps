@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Facility finder{% endblock %}
+{% block head %}<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">{% endblock %}
+{% block content %}
+<h2 class="section-title">Facility finder</h2>
+<form class="row g-2 align-items-end mb-3" method="get" id="finder">
+  <div class="col-sm-5">{{ form.service.label_tag }} {{ form.service }}</div>
+  <div class="col-auto"><div class="form-check mt-4">{{ form.open_now }} <label class="form-check-label" for="id_open_now">Open now</label></div></div>
+  {{ form.lat }}{{ form.lon }}
+  <div class="col-auto"><button class="btn btn-teal">Search</button></div>
+  <div class="col-auto"><button type="button" class="btn btn-outline-teal" id="locate"><i class="bi bi-crosshair"></i> Use my location</button></div>
+</form>
+<div class="row g-3">
+  <div class="col-lg-7"><div id="map" class="map"></div></div>
+  <div class="col-lg-5">
+    <div class="list-group" style="max-height: 420px; overflow-y: auto;">
+      {% for f, d in results %}
+      <div class="list-group-item">
+        <div class="d-flex justify-content-between"><strong>{{ f.name }}</strong><span class="small">{{ d }} km</span></div>
+        <div class="small text-muted">{{ f.get_facility_type_display }} · {{ f.lga }} · {{ f.opening_summary }}</div>
+        <div class="small">{% if f.open_now %}<span class="text-success">{% if f.hours_verified %}Open now{% else %}Usually open now{% endif %}</span>{% else %}<span class="text-danger">{% if f.hours_verified %}Closed now{% else %}Usually closed now{% endif %}</span>{% endif %}{% if f.phone %} · {{ f.phone }}{% endif %}{% if f.ownership %} · {{ f.ownership }}{% endif %}</div>
+        <div class="small text-muted">{% if not f.hours_verified %}Likely services: {% endif %}{{ f.service_labels|join:", " }}</div>
+        {% if f.registry_code %}<div class="small text-muted">Registry code {{ f.registry_code }}</div>{% endif %}
+      </div>
+      {% empty %}<div class="list-group-item">No facilities match. Try another service.</div>{% endfor %}
+    </div>
+  </div>
+</div>
+<p class="small text-muted mt-2">Facilities: GRID3 Nigeria health facilities v3.0/v2.0 (built from the Nigeria Health Facility Registry, NPHCDA and field surveys; CC BY 4.0). Opening hours and services are typical for the facility type and not confirmed.</p>
+{{ payload|json_script:"facility-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+  const origin = [{{ origin.0 }}, {{ origin.1 }}];
+  const map = L.map("map").setView(origin, 12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {maxZoom: 18, attribution: "© OpenStreetMap"}).addTo(map);
+  L.circleMarker(origin, {radius: 8, color: "#e8704f", fillOpacity: .9}).addTo(map).bindPopup("You are here");
+  const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  const pts = [origin];
+  JSON.parse(document.getElementById("facility-data").textContent).forEach(f => {
+    pts.push([f.lat, f.lon]);
+    L.marker([f.lat, f.lon]).addTo(map).bindPopup(
+      `<strong>${esc(f.name)}</strong><br>${esc(f.type)}${f.ownership ? " · " + esc(f.ownership) : ""}<br>${esc(f.hours)}<br>${f.open_now ? (f.hours_verified ? "Open now" : "Usually open now") : (f.hours_verified ? "Closed now" : "Usually closed now")} · ${f.distance_km} km<br><a href="${f.map_url}" target="_blank">Directions</a>`);
+  });
+  if (pts.length > 1) map.fitBounds(pts, {padding: [30, 30]});
+  document.getElementById("locate").addEventListener("click", () => {
+    navigator.geolocation.getCurrentPosition(pos => {
+      document.getElementById("id_lat").value = pos.coords.latitude;
+      document.getElementById("id_lon").value = pos.coords.longitude;
+      document.getElementById("finder").submit();
+    }, () => alert("Could not get your location."));
+  });
+</script>
+{% endblock %}

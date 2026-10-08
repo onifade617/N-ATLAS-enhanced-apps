@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}ClimateGuard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-end gap-2 mb-3">
+  <div>
+    <h2 class="section-title mb-0"><i class="bi bi-cloud-sun"></i> ClimateGuard</h2>
+    <div class="text-muted">Climate-health risk for <strong>{{ lga }}</strong>
+      {% if source %}· weather source: {% if source == "open-meteo" %}Open-Meteo (live){% else %}<span class="badge bg-secondary">simulated (offline)</span>{% endif %}{% endif %}</div>
+  </div>
+  <form method="get" class="d-flex gap-2">
+    <select name="lga" class="form-select" data-lga-picker onchange="this.form.submit()">
+      {% for group, opts in lga_choices %}{% if opts %}<optgroup label="{{ group }}">{% for id, name in opts %}<option value="{{ id }}" {% if id == lga.id %}selected{% endif %}>{{ name }}</option>{% endfor %}</optgroup>{% endif %}{% endfor %}
+    </select>
+  </form>
+</div>
+
+<div class="row g-3 mb-4">
+  {% for r in risks %}<div class="col-md-4">{% include "includes/risk_card.html" %}</div>
+  {% empty %}<div class="col"><div class="card p-3">No assessment yet. Run <code>python manage.py run_intelligence_loop</code>.</div></div>{% endfor %}
+</div>
+
+{% if chart.labels %}
+<div class="card mb-4">
+  <div class="card-header">Last 14 days and 7-day forecast</div>
+  <div class="card-body"><canvas id="wx" height="110"></canvas></div>
+</div>
+{% endif %}
+
+<h5 class="section-title">How the scores work</h5>
+<p class="small text-muted">Explainable by design: published, transparent thresholds — every alert says why.</p>
+<div class="row g-3">
+  {% for hazard, m in methodology.items %}
+  <div class="col-md-4"><div class="card h-100 p-3 small">
+    <h6 class="text-capitalize">{{ hazard }}</h6>
+    <p>{{ m.summary }}</p>
+    <ul class="mb-0">{% for rule in m.rules %}<li>{{ rule }}</li>{% endfor %}</ul>
+  </div></div>
+  {% endfor %}
+</div>
+{{ chart|json_script:"chart-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  const el = document.getElementById("wx");
+  if (el) {
+    const c = JSON.parse(document.getElementById("chart-data").textContent);
+    new Chart(el, {
+      data: {
+        labels: c.labels,
+        datasets: [
+          {type: "bar", label: "Rain (mm)", data: c.rain, yAxisID: "y",
+           backgroundColor: c.forecast.map(f => f ? "rgba(15,92,110,.35)" : "rgba(15,92,110,.8)")},
+          {type: "line", label: "Feels-like max (°C)", data: c.tmax, yAxisID: "y1", borderColor: "#e8704f", tension: .3,
+           segment: {borderDash: ctx => c.forecast[ctx.p1DataIndex] ? [6, 4] : undefined}},
+        ],
+      },
+      options: {
+        interaction: {mode: "index", intersect: false},
+        scales: {y: {title: {display: true, text: "mm"}}, y1: {position: "right", grid: {drawOnChartArea: false}, title: {display: true, text: "°C"}}},
+        plugins: {subtitle: {display: true, text: "Lighter bars / dashed line = forecast"}},
+      },
+    });
+  }
+</script>
+{% endblock %}

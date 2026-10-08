@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}My Lafiya{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div>
+    <h2 class="section-title mb-0">Hello, {{ profile.first_name }}</h2>
+    <div class="text-muted small">{{ profile.lga|default:"Set your LGA in your profile" }} · Lafiya speaks to you in {{ profile.language_name }}</div>
+  </div>
+  <a href="{% url 'navigator' %}" class="btn btn-teal btn-lg"><i class="bi bi-mic-fill"></i> Ask Lafiya</a>
+</div>
+
+{% if alerts %}
+<div class="card mb-4">
+  <div class="card-header d-flex justify-content-between"><span><i class="bi bi-bell"></i> Your alerts</span><a href="{% url 'alerts' %}" class="small">See all</a></div>
+  <ul class="list-group list-group-flush">
+    {% for a in alerts %}
+    <li class="list-group-item {% if not a.opened_at %}unread{% endif %}">
+      <div class="fw-semibold"><i class="bi bi-{{ a.icon }} text-orange"></i> {{ a.title }}</div>
+      <div class="small">{{ a.message|truncatechars:180 }}</div>
+    </li>
+    {% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-heart text-teal"></i> MamaCare</div>
+      <div class="card-body">
+        {% if pregnancy %}
+          <div class="d-flex justify-content-between"><strong>{{ pregnancy.weeks }} weeks pregnant</strong><span class="small text-muted">Due {{ pregnancy.edd|date:"d M Y" }}</span></div>
+          <div class="progress my-2"><div class="progress-bar bg-warning" style="width: {{ pregnancy.progress_percent }}%"></div></div>
+          {% if next_visit %}<p class="small mb-2">Next antenatal visit: contact {{ next_visit.contact_number }} on <strong>{{ next_visit.scheduled_date|date:"d M" }}</strong>
+            <span class="status-{{ next_visit.status_now }}">({{ next_visit.status_now }})</span></p>{% endif %}
+          <a href="{% url 'mamacare' %}" class="btn btn-sm btn-outline-teal">Open pregnancy tracker</a>
+        {% else %}
+          <p class="small">Pregnant? Add your pregnancy to get your antenatal schedule and danger-sign guidance.</p>
+          <a href="{% url 'mamacare_add_pregnancy' %}" class="btn btn-sm btn-outline-teal">Add pregnancy</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-6">
+    <div class="card h-100">
+      <div class="card-header"><i class="bi bi-shield-plus text-teal"></i> ImmuniTrack</div>
+      <div class="card-body">
+        {% for item in children %}
+          <div class="d-flex justify-content-between align-items-center border-bottom py-2">
+            <div><a href="{% url 'immunitrack_child' item.child.pk %}" class="fw-semibold">{{ item.child.name }}</a> <span class="small text-muted">{{ item.child.age_display }}</span>
+              {% if item.next %}<div class="small">Next: {% for v in item.next.vaccines %}{{ v.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</div>{% endif %}
+            </div>
+            {% if item.next %}<span class="small status-{{ item.next.status }}">{{ item.next.due_date|date:"d M" }} · {{ item.next.status|cut:"_" }}</span>{% else %}<span class="small status-given">Up to date</span>{% endif %}
+          </div>
+        {% empty %}
+          <p class="small">Add your children under five to get their personal vaccine schedule.</p>
+        {% endfor %}
+        <a href="{% url 'immunitrack_add_child' %}" class="btn btn-sm btn-outline-teal mt-2">Add a child</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center"><h5 class="section-title mb-2"><i class="bi bi-cloud-sun"></i> ClimateGuard — {{ profile.lga.name }}</h5><a href="{% url 'climate' %}" class="small">Details</a></div>
+    <div class="row g-3">
+      {% for r in risks %}<div class="col-md-4">{% include "includes/risk_card.html" %}</div>
+      {% empty %}<div class="col"><div class="card p-3 small">No risk scores yet — run <code>python manage.py run_intelligence_loop</code>.</div></div>{% endfor %}
+    </div>
+  </div>
+
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between"><span><i class="bi bi-geo-alt text-teal"></i> Nearest facilities</span><a href="{% url 'facilities' %}" class="small">Facility finder</a></div>
+      <ul class="list-group list-group-flush">
+        {% for f, d in nearest %}
+        <li class="list-group-item d-flex justify-content-between flex-wrap">
+          <div><strong>{{ f.name }}</strong> <span class="small text-muted">{{ f.get_facility_type_display }} · {{ f.opening_summary }}</span></div>
+          <div class="small">{{ d }} km · {% if f.open_now %}<span class="text-success">{% if not f.hours_verified %}Usually open{% else %}Open now{% endif %}</span>{% else %}<span class="text-danger">{% if not f.hours_verified %}Usually closed{% else %}Closed{% endif %}</span>{% endif %}</div>
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Health worker{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div>
+    <h2 class="section-title mb-0"><i class="bi bi-clipboard2-pulse"></i> {{ profile.facility|default:"Health worker" }}</h2>
+    <div class="text-muted small">{{ lga }} · {{ pregnant_count }} pregnant women · {{ u5_count }} children under five enrolled</div>
+  </div>
+  <a href="{% url 'worker_enrol' %}" class="btn btn-teal"><i class="bi bi-person-plus"></i> Enrol a household</a>
+</div>
+
+{% if elevated %}
+<div class="alert alert-danger">
+  <strong><i class="bi bi-exclamation-triangle-fill"></i> High-risk week in {{ lga.name }}:</strong>
+  {% for r in elevated %}{{ r.get_hazard_display }} ({{ r.get_level_display }}) — {{ r.explanation }} {% endfor %}
+  Prioritise pregnant women and under-5s for follow-up; personalised alerts have been sent.
+</div>
+{% endif %}
+
+<div class="row g-4">
+  <div class="col-xl-7">
+    <div class="card mb-4">
+      <div class="card-header">Children due or overdue for vaccines (next 7 days)</div>
+      <div class="table-responsive">
+      <table class="table table-sm mb-0">
+        <thead><tr><th>Child</th><th>Caregiver</th><th>Vaccines</th><th>Due</th><th></th></tr></thead>
+        <tbody>
+        {% for item in children_due %}
+          <tr>
+            <td>{{ item.child.name }}<div class="small text-muted">{{ item.child.age_display }}</div></td>
+            <td class="small">{{ item.child.caregiver.full_name }}<div class="text-muted">{{ item.child.caregiver.phone }} · {{ item.child.caregiver.language_name }}</div></td>
+            <td class="small">{% for v in item.next.vaccines %}{{ v.name }}{% if not forloop.last %}, {% endif %}{% endfor %}</td>
+            <td class="small status-{{ item.next.status }}">{{ item.next.due_date|date:"d M" }}<br>{{ item.next.status|cut:"_" }}</td>
+            <td><form method="post" action="{% url 'worker_vaccinate' item.child.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-teal">Given today</button></form></td>
+          </tr>
+        {% empty %}<tr><td colspan="5" class="text-muted">No children due this week.</td></tr>{% endfor %}
+        </tbody>
+      </table>
+      </div>
+    </div>
+  </div>
+  <div class="col-xl-5">
+    <div class="card mb-4">
+      <div class="card-header">Mothers due for antenatal care</div>
+      <ul class="list-group list-group-flush">
+        {% for m in mothers %}
+        <li class="list-group-item">
+          <div class="d-flex justify-content-between">
+            <div><strong>{{ m.pregnancy.profile.full_name }}</strong> {% if m.pregnancy.high_risk %}<span class="badge bg-danger">high risk</span>{% endif %}
+              <div class="small text-muted">{{ m.pregnancy.weeks }} weeks · ANC {{ m.visit.contact_number }} · {{ m.visit.scheduled_date|date:"d M" }} · <span class="status-{{ m.status }}">{{ m.status }}</span></div></div>
+            <div class="d-flex gap-1">
+              <form method="post" action="{% url 'worker_anc' m.visit.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-teal" title="Record visit">Attended</button></form>
+              <form method="post" action="{% url 'worker_flag' m.pregnancy.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" title="Toggle high-risk flag"><i class="bi bi-flag"></i></button></form>
+            </div>
+          </div>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">No ANC visits due this week.</li>{% endfor %}
+      </ul>
+    </div>
+    <div class="card">
+      <div class="card-header">Referrals from the Care Navigator</div>
+      <ul class="list-group list-group-flush">
+        {% for r in referrals %}
+        <li class="list-group-item d-flex justify-content-between align-items-center">
+          <div class="small"><strong>{{ r.profile.full_name }}</strong> → {{ r.facility.name }}
+            <div class="text-muted">{{ r.reason }} · <span class="{% if r.urgency == 'emergency' %}text-danger fw-bold{% endif %}">{{ r.get_urgency_display }}</span> · {{ r.get_status_display }}</div></div>
+          <form method="post" action="{% url 'worker_referral_done' r.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-teal">Completed</button></form>
+        </li>
+        {% empty %}<li class="list-group-item text-muted">No open referrals.</li>{% endfor %}
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

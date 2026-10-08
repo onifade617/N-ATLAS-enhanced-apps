@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-md-5">
+  <div class="card p-4">
+    <h3 class="section-title mb-3">Log in to Lafiya</h3>
+    <form method="post">
+      {% csrf_token %}
+      {% if form.errors %}<div class="alert alert-danger">Username or password is not correct.</div>{% endif %}
+      <div class="mb-3"><label class="form-label">Username</label><input name="username" class="form-control" autofocus required></div>
+      <div class="mb-3"><label class="form-label">Password</label><input type="password" name="password" class="form-control" required></div>
+      <input type="hidden" name="next" value="{{ next }}">
+      <button class="btn btn-teal w-100">Log in</button>
+    </form>
+    <p class="small mt-3 mb-0">New here? <a href="{% url 'signup' %}">Join free</a>. Demo password: <code>lafiya123</code></p>
+  </div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}{{ child.name }}'s vaccines{% endblock %}
+{% block content %}
+<a href="{% url 'immunitrack' %}" class="small">&larr; ImmuniTrack</a>
+<h2 class="section-title mt-1">{{ child.name }}'s vaccine schedule</h2>
+<p class="text-muted">{{ child.get_sex_display }} · {{ child.age_display }} · born {{ child.date_of_birth|date:"d M Y" }}</p>
+{% if next %}
+<div class="alert {% if next.status == 'overdue' %}alert-danger{% else %}alert-warning{% endif %}">
+  <strong>{% if next.status == "overdue" %}Catch up now:{% else %}Next visit {{ next.due_date|date:"d M Y" }}:{% endif %}</strong>
+  {% for v in next.vaccines %}{{ v.name }}{% if not forloop.last %}, {% endif %}{% endfor %}.
+  Immunization is free. <a href="{% url 'facilities' %}?service=immunization">Find a clinic</a>
+</div>
+{% endif %}
+<div class="card">
+  <table class="table table-sm mb-0">
+    <thead><tr><th>Age</th><th>Vaccine</th><th>Due</th><th>Status</th><th>Record</th></tr></thead>
+    <tbody>
+    {% for label, rows in groups.items %}
+      {% for r in rows %}
+      <tr>
+        {% if forloop.first %}<td rowspan="{{ rows|length }}" class="fw-semibold">{{ label }}</td>{% endif %}
+        <td>{{ r.vaccine.name }}<div class="small text-muted">{{ r.vaccine.protects_against }}</div></td>
+        <td>{{ r.due_date|date:"d M Y" }}</td>
+        <td class="status-{{ r.status }}">{% if r.status == "given" %}<i class="bi bi-check-circle-fill"></i> Given {{ r.given_date|date:"d M Y" }}{% else %}{{ r.status|cut:"_"|capfirst }}{% endif %}</td>
+        <td>{% if r.status != "given" and r.due_date <= today %}
+          <form method="post" action="{% url 'immunitrack_record' child.pk %}" class="d-flex gap-1">{% csrf_token %}
+            <input type="hidden" name="vaccine" value="{{ r.vaccine.pk }}">
+            <input type="date" name="given_date" value="{{ today|date:'Y-m-d' }}" class="form-control form-control-sm" style="max-width: 150px">
+            <button class="btn btn-sm btn-outline-teal">Given</button>
+          </form>{% endif %}</td>
+      </tr>
+      {% endfor %}
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

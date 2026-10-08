@@ -1,0 +1,61 @@
+# Render Blueprint for Lafiya AI: Dashboard -> New -> Blueprint -> pick this repo.
+# N-ATLaS itself is NOT hosted here (no GPUs on Render) - it runs on the Modal gateway.
+databases:
+  - name: lafiya-db
+    plan: free            # free Postgres expires after 30 days; upgrade before relying on it
+    databaseName: lafiya
+    user: lafiya
+
+services:
+  - type: web
+    name: lafiya
+    runtime: python
+    plan: free            # free instances sleep after 15 min idle; use "starter" for WhatsApp testers
+    buildCommand: bash build.sh
+    startCommand: gunicorn lafiya.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --threads 4 --timeout 120
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        fromDatabase:
+          name: lafiya-db
+          property: connectionString
+      - key: DJANGO_SECRET_KEY
+        generateValue: true
+      - key: DJANGO_DEBUG
+        value: "0"
+      # N-ATLaS gateway on Modal (values from your local .env) - entered in the dashboard, never committed
+      - key: NATLAS_BASE_URL
+        sync: false
+      - key: NATLAS_API_KEY
+        sync: false
+      - key: NATLAS_MODEL
+        value: NCAIR1/N-ATLaS
+      - key: NATLAS_TIMEOUT
+        value: "60"
+      - key: LAFIYA_CHALLENGE_MODE
+        value: "1"
+      - key: LAFIYA_SPOKEN_REPLIES
+        value: "1"
+      - key: LAFIYA_NATLAS_FOR_ALERTS
+        value: "0"        # keep 0 to save Modal GPU credit
+      # WhatsApp (optional until Twilio is set up). PUBLIC_BASE_URL defaults to the Render URL.
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        value: whatsapp:+14155238886
+
+# Daily Intelligence Loop (Render cron jobs are paid - uncomment when ready):
+#  - type: cron
+#    name: lafiya-daily-loop
+#    runtime: python
+#    plan: starter
+#    schedule: "0 5 * * *"        # 06:00 WAT
+#    buildCommand: pip install -r requirements.txt
+#    startCommand: python manage.py run_intelligence_loop
+#    envVars:
+#      - key: DATABASE_URL
+#        fromDatabase: {name: lafiya-db, property: connectionString}
