@@ -12,3 +12,4 @@ runs/
 !docs/evidence/*.wav
 beta_private/
 testers.csv
+natlas-test/
