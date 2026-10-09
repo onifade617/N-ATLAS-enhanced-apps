@@ -25,7 +25,7 @@ N-ATLAS ASR service".
 
 ## Go-live (about 2 hours once accounts exist)
 
-1. **Gateway** — `bash scripts/deploy_natlas_gateway.sh`, then `python manage.py natlas_check` (see README).
+1. **Gateway** — `bash scripts/deploy_natlas_gateway.sh`, then `python manage.py natlas_check` (see [LAFIYA.md](LAFIYA.md#connecting-n-atlas-n-atlas-kit-gateway)).
 2. **Public URL for this server** — `cloudflared tunnel --url http://localhost:8000` (or `ngrok http 8000`).
    Keep it running for the validation period, or deploy Lafiya to a small VM / Render / Railway.
 3. **Twilio WhatsApp sandbox** — Twilio console → Messaging → *Try it out* → *Send a WhatsApp message*.
