@@ -11,3 +11,4 @@ runs/
 *.wav
 !docs/evidence/*.wav
 beta_private/
+testers.csv
