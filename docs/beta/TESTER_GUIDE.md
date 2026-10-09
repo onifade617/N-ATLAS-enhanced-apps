@@ -22,7 +22,7 @@ at the end asks for this.
 ## Task 1: install and run offline (no key needed)
 
 ```bash
-pip install "git+https://github.com/onifade617/N-ATLAS-enhanced-apps@feat/lafiya-natlas-devkit"
+pip install "git+https://github.com/onifade617/N-ATLAS-enhanced-apps"
 #   or, if you were sent a .whl file:  pip install natlas_health-0.1.0-py3-none-any.whl
 natlas-health --version
 natlas-health ask "Which vaccine does my baby need next?" --fact "Child: Tobi, 6 weeks" --mock

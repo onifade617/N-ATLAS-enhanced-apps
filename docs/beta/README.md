@@ -28,7 +28,7 @@ The repository is **private**. Choose one:
   you do, add a `LICENSE` file. The repo has none yet, and without one "open source" is not true. Check with
   Awarri whether you may publish this under an open licence, since you are an employee.
   Testers then install with:
-  `pip install "git+https://github.com/onifade617/N-ATLAS-enhanced-apps@feat/lafiya-natlas-devkit"`
+  `pip install "git+https://github.com/onifade617/N-ATLAS-enhanced-apps"`
 - **Keep it private.** Add each tester as a read-only collaborator:
   `gh api -X PUT repos/onifade617/N-ATLAS-enhanced-apps/collaborators/<github-user> -f permission=pull`
   This needs the `onifade617` login. Or send them the wheel from `python -m pip wheel . --no-deps` together with
