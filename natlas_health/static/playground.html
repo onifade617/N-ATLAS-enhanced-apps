@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>N-ATLaS Playground</title>
+<style>
+:root {
+  --bg: #f7f7f5; --panel: #ffffff; --ink: #1a1a1a; --muted: #6b6b6b; --line: #dedcd6;
+  --accent: #0b6e4f; --accent-ink: #ffffff; --bad: #b42318; --warn: #a15c00; --code: #f1f0ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141414; --panel: #1d1d1d; --ink: #ececec; --muted: #9a9a9a; --line: #333;
+    --accent: #3fb68b; --accent-ink: #0d0d0d; --bad: #f07167; --warn: #f0b429; --code: #252525;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between;
+  padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+header h1 { font-size: 17px; margin: 0; }
+header .meta { color: var(--muted); font-size: 13px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: var(--muted); margin-right: 5px; }
+.dot.ok { background: var(--accent); } .dot.bad { background: var(--bad); }
+.banner { background: var(--warn); color: #111; padding: 6px 20px; font-size: 13px; display: none; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; padding: 20px; max-width: 1400px; margin: 0 auto; }
+@media (max-width: 900px) { main { grid-template-columns: minmax(0, 1fr); padding: 16px; } }
+section { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 16px; min-width: 0; }
+.tabs { display: flex; gap: 4px; margin-bottom: 14px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+.tabs button { background: none; border: 0; border-bottom: 2px solid transparent; padding: 8px 12px; color: var(--muted); cursor: pointer; font: inherit; }
+.tabs button.active { color: var(--ink); border-color: var(--accent); }
+label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+textarea, input, select { width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 6px; padding: 8px; }
+textarea { min-height: 70px; resize: vertical; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: end; }
+.row > * { flex: 1 1 140px; }
+button.primary, button.secondary { font: inherit; border-radius: 6px; padding: 9px 16px; cursor: pointer; margin-top: 12px; }
+button.primary { background: var(--accent); color: var(--accent-ink); border: 0; }
+button.secondary { background: none; color: var(--ink); border: 1px solid var(--line); }
+button:disabled { opacity: .5; cursor: wait; }
+.panel { display: none; } .panel.active { display: block; }
+.reply { white-space: pre-wrap; font-size: 16px; padding: 12px; border-radius: 6px; background: var(--bg); min-height: 60px; }
+.reply.emergency { border-left: 4px solid var(--bad); }
+.badges { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0; }
+.badge { font-size: 12px; padding: 2px 8px; border-radius: 10px; border: 1px solid var(--line); }
+.badge.pass { color: var(--accent); border-color: var(--accent); }
+.badge.fail { color: var(--bad); border-color: var(--bad); }
+pre { background: var(--code); padding: 10px; border-radius: 6px; overflow-x: auto; font-size: 12.5px; white-space: pre-wrap; word-break: break-word; }
+h2 { font-size: 15px; margin: 18px 0 6px; }
+h2:first-child { margin-top: 0; }
+.muted { color: var(--muted); font-size: 13px; }
+.msg { display: grid; grid-template-columns: 110px 1fr 28px; gap: 6px; margin-bottom: 6px; }
+.msg button { background: none; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); cursor: pointer; }
+audio { width: 100%; margin-top: 10px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>N-ATLaS Playground <span class="muted">· natlas-health</span></h1>
+  <div class="meta">
+    <span><span class="dot" id="dot"></span><span id="status">gateway not checked</span></span>
+    <span id="model"></span>
+    <button class="secondary" id="recheck" style="margin:0;padding:4px 10px" title="Wakes the GPU on Modal">Check health</button>
+  </div>
+</header>
+<div class="banner" id="mock">Mock mode: replies come from the offline MockClient, not N-ATLaS. Start without --mock to use your gateway.</div>
+<main>
+  <section>
+    <div class="tabs" role="tablist">
+      <button class="active" data-tab="answer">Health answer</button>
+      <button data-tab="chat">Raw chat</button>
+      <button data-tab="voice">Voice</button>
+    </div>
+
+    <div class="panel active" id="panel-answer">
+      <p class="muted">Grounded answer with the SDK's safety layer: your FACTS and GUIDANCE go in the system prompt, danger signs always get the emergency notice.</p>
+      <label for="sample">Load a sample case</label>
+      <select id="sample"><option value="">—</option></select>
+      <div class="row">
+        <div><label for="a-lang">Language</label><select id="a-lang" class="lang"></select></div>
+        <div><label for="a-temp">Temperature</label><input id="a-temp" type="number" min="0" max="1.5" step="0.1" value="0.3"></div>
+      </div>
+      <label for="a-q">Question</label>
+      <textarea id="a-q" placeholder="Which vaccine does my baby need next?"></textarea>
+      <label for="a-facts">Facts (one per line, from the person's records)</label>
+      <textarea id="a-facts"></textarea>
+      <label for="a-guid">Guidance (one per line, from WHO/NPHCDA)</label>
+      <textarea id="a-guid"></textarea>
+      <button class="primary" id="a-go">Ask N-ATLaS</button>
+    </div>
+
+    <div class="panel" id="panel-chat">
+      <p class="muted">Send any messages straight to <code>/v1/chat/completions</code>.</p>
+      <div class="row">
+        <div><label for="c-lang">Language</label><select id="c-lang" class="lang"></select></div>
+        <div><label for="c-temp">Temperature</label><input id="c-temp" type="number" min="0" max="1.5" step="0.1" value="0.3"></div>
+        <div><label for="c-max">Max tokens</label><input id="c-max" type="number" min="1" max="2048" value="300"></div>
+      </div>
+      <label>Messages</label>
+      <div id="msgs"></div>
+      <button class="secondary" id="c-add">+ message</button>
+      <button class="primary" id="c-go">Send</button>
+    </div>
+
+    <div class="panel" id="panel-voice">
+      <p class="muted">Speech-to-text with the per-language ASR models, and N-ATLaS voices for text-to-speech.</p>
+      <label for="v-lang">Language</label><select id="v-lang" class="lang"></select>
+      <h2>Speech to text</h2>
+      <div class="row">
+        <button class="secondary" id="v-rec">● Record</button>
+        <div><label for="v-file">…or upload audio</label><input id="v-file" type="file" accept="audio/*"></div>
+      </div>
+      <h2>Text to speech</h2>
+      <textarea id="v-text" placeholder="Text to read aloud (max 800 characters)"></textarea>
+      <button class="primary" id="v-speak">Speak</button>
+    </div>
+  </section>
+
+  <section aria-live="polite">
+    <h2>Response</h2>
+    <div class="reply" id="out"><span class="muted">Responses appear here.</span></div>
+    <div class="muted" id="out-meta"></div>
+    <div class="badges" id="checks"></div>
+    <audio id="player" controls hidden></audio>
+    <h2>Request sent to N-ATLaS</h2>
+    <pre id="req">—</pre>
+    <h2>Python</h2>
+    <pre id="py">—</pre>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let config = null;
+
+async function api(path, body) {
+  const res = await fetch(path, body === undefined ? {} : {
+    method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(body)});
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || res.statusText);
+  return data;
+}
+
+function busy(btn, on) { btn.disabled = on; }
+function lines(id) { return $(id).value.split("\n").map(s => s.trim()).filter(Boolean); }
+function show(text, meta, opts = {}) {
+  const out = $("out");
+  out.textContent = text || "(empty reply)";
+  out.classList.toggle("emergency", !!opts.emergency);
+  $("out-meta").textContent = meta || "";
+  $("checks").replaceChildren();
+  for (const [name, c] of Object.entries(opts.checks || {})) {
+    if (c.passed === null) continue;
+    const b = document.createElement("span");
+    b.className = "badge " + (c.passed ? "pass" : "fail");
+    b.textContent = (c.passed ? "✓ " : "✗ ") + name.replace(/_/g, " ");
+    if (c.detail) b.title = c.detail;
+    $("checks").append(b);
+  }
+  if (opts.request) $("req").textContent = JSON.stringify(opts.request, null, 2);
+  if (opts.python) $("py").textContent = opts.python;
+}
+function fail(err) { show("Error: " + err.message, ""); }
+
+async function health() {
+  $("status").textContent = "checking gateway… (a cold start can take minutes)";
+  $("dot").className = "dot";
+  try {
+    const h = await api("/api/health");
+    $("dot").className = "dot " + (h.ok ? "ok" : "bad");
+    $("status").textContent = h.ok ? "gateway ready" : "gateway not ready";
+    $("status").title = JSON.stringify(h.details);
+  } catch (e) { $("dot").className = "dot bad"; $("status").textContent = e.message; }
+}
+
+function addMsg(role = "user", content = "") {
+  const row = document.createElement("div");
+  row.className = "msg";
+  row.innerHTML = `<select aria-label="Role"><option>system</option><option>user</option><option>assistant</option></select>
+    <textarea aria-label="Content" style="min-height:44px"></textarea><button title="Remove" aria-label="Remove">×</button>`;
+  row.querySelector("select").value = role;
+  row.querySelector("textarea").value = content;
+  row.querySelector("button").onclick = () => row.remove();
+  $("msgs").append(row);
+}
+
+async function init() {
+  config = await api("/api/config");
+  $("model").textContent = config.model;
+  $("mock").style.display = config.mock ? "block" : "none";
+  for (const sel of document.querySelectorAll(".lang"))
+    for (const [code, name] of Object.entries(config.languages)) sel.add(new Option(`${name} (${code})`, code));
+  config.samples.forEach((c, i) => $("sample").add(new Option(`${c.id}`, i)));
+  addMsg("user", "Sannu! Yaya lafiya?");
+  $("c-lang").value = "ha";
+  // No automatic health check: on Modal the gateway shares the GPU container, so /health wakes the GPU.
+  if (config.mock) health();
+}
+
+document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".tabs button").forEach(x => x.classList.toggle("active", x === b));
+  document.querySelectorAll(".panel").forEach(p => p.classList.toggle("active", p.id === "panel-" + b.dataset.tab));
+});
+$("recheck").onclick = health;
+$("c-add").onclick = () => addMsg();
+$("sample").onchange = () => {
+  const c = config.samples[$("sample").value];
+  if (!c) return;
+  $("a-lang").value = c.language; $("a-q").value = c.question;
+  $("a-facts").value = (c.facts || []).join("\n"); $("a-guid").value = (c.guidance || []).join("\n");
+};
+
+$("a-go").onclick = async () => {
+  const btn = $("a-go"); busy(btn, true);
+  try {
+    const r = await api("/api/answer", {question: $("a-q").value, language: $("a-lang").value,
+      facts: lines("a-facts"), guidance: lines("a-guid"), temperature: $("a-temp").value});
+    const meta = `${r.generated_by}${r.emergency ? " · danger sign detected" : ""}${r.latency_ms ? " · " + r.latency_ms + " ms" : ""}${r.error ? " · " + r.error : ""}`;
+    show(r.text, meta, r);
+    $("v-text").value = r.text; $("v-lang").value = $("a-lang").value;
+  } catch (e) { fail(e); } finally { busy(btn, false); }
+};
+
+$("c-go").onclick = async () => {
+  const btn = $("c-go"); busy(btn, true);
+  const messages = [...document.querySelectorAll(".msg")].map(r => ({
+    role: r.querySelector("select").value, content: r.querySelector("textarea").value}));
+  try {
+    const r = await api("/api/chat", {messages, language: $("c-lang").value, temperature: $("c-temp").value, max_tokens: $("c-max").value});
+    show(r.text, `${r.model} · ${r.latency_ms} ms`, r);
+  } catch (e) { fail(e); } finally { busy(btn, false); }
+};
+
+async function transcribe(blob, filename) {
+  show("Transcribing…", "");
+  const b64 = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result.split(",")[1]); fr.readAsDataURL(blob); });
+  try {
+    const r = await api("/api/transcribe", {audio_b64: b64, filename, content_type: blob.type, language: $("v-lang").value});
+    show(r.text, `ASR model: ${r.asr_language} · ${r.latency_ms} ms`,
+      {request: {route: "/v1/audio/transcriptions", language: r.asr_language, file: filename}, python:
+        `from natlas_health import NatlasClient\n\nclient = NatlasClient.from_env()\nprint(client.transcribe("${filename}", language="${$("v-lang").value}").text)\n`});
+    $("a-q").value = r.text; $("a-lang").value = $("v-lang").value;
+  } catch (e) { fail(e); }
+}
+$("v-file").onchange = () => { const f = $("v-file").files[0]; if (f) transcribe(f, f.name); };
+
+let rec = null;
+$("v-rec").onclick = async () => {
+  if (rec) { rec.stop(); return; }
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({audio: true});
+    const chunks = [];
+    rec = new MediaRecorder(stream);
+    rec.ondataavailable = e => chunks.push(e.data);
+    rec.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      $("v-rec").textContent = "● Record"; rec = null;
+      transcribe(new Blob(chunks, {type: chunks[0]?.type || "audio/webm"}), "voice.webm");
+    };
+    rec.start(); $("v-rec").textContent = "■ Stop";
+  } catch (e) { fail(e); }
+};
+
+$("v-speak").onclick = async () => {
+  const btn = $("v-speak"); busy(btn, true);
+  try {
+    const r = await api("/api/speak", {text: $("v-text").value, language: $("v-lang").value});
+    const p = $("player");
+    p.src = `data:${r.content_type};base64,${r.audio_b64}`; p.hidden = false; p.play().catch(() => {});
+    $("out-meta").textContent = `voice: ${r.voice} · ${r.latency_ms} ms`;
+    $("req").textContent = JSON.stringify({route: "/v1/audio/speech", input: $("v-text").value.slice(0, 800), language: $("v-lang").value}, null, 2);
+    $("py").textContent = `from natlas_health import NatlasClient\n\nspeech = NatlasClient.from_env().speak(${JSON.stringify($("v-text").value.slice(0, 80))}, language="${$("v-lang").value}")\nopen("reply.wav", "wb").write(speech.audio)\n`;
+  } catch (e) { fail(e); } finally { busy(btn, false); }
+};
+
+init().catch(fail);
+</script>
+</body>
+</html>

@@ -5,10 +5,8 @@ import hashlib
 import hmac
 import io
 import json
-import threading
 import urllib.parse
 from datetime import date
-from http.server import ThreadingHTTPServer
 
 from django.core.management import call_command
 from django.test import override_settings
@@ -17,18 +15,19 @@ from alerts.engine import run_loop
 from alerts.models import Alert
 from core.models import Profile
 from dashboard.evidence import summary
+from natlas_health.testing import FakeGateway, GatewayHandler
 from navigator import whatsapp
 from navigator.models import Message, VoiceClip, WhatsAppContact
 from navigator.whatsapp_texts import LANGUAGE_MENU
 
 from .test_lafiya import LafiyaTestCase
-from .test_natlas_gateway import KEY, FakeGateway
+from .test_natlas_gateway import KEY
 
 SID, TOKEN = "AC123", "twilio-secret"
 AUDIO = b"OggS\x00fake-whatsapp-opus"
 
 
-class FakeTwilioAndGateway(FakeGateway):
+class FakeTwilioAndGateway(GatewayHandler):
     asr_text = "which vaccine does my baby need next"
     sent = []
 
@@ -63,7 +62,7 @@ class FakeTwilioAndGateway(FakeGateway):
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length)
             assert AUDIO in body, "voice note bytes must reach the ASR"
-            FakeGateway.requests.append((self.path, self.headers, body))
+            self.server.gateway.requests.append((self.path, self.headers, body))
             return self._send(200, {"text": FakeTwilioAndGateway.asr_text})
         super().do_POST()
 
@@ -72,14 +71,12 @@ class WhatsAppTests(LafiyaTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), FakeTwilioAndGateway)
-        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
-        cls.base = f"http://127.0.0.1:{cls.server.server_port}"
+        cls.fake = FakeGateway(api_key=KEY, handler=FakeTwilioAndGateway).start()
+        cls.base = cls.fake.url
 
     @classmethod
     def tearDownClass(cls):
-        cls.server.shutdown()
-        cls.server.server_close()
+        cls.fake.stop()
         super().tearDownClass()
 
     def setUp(self):
@@ -150,9 +147,9 @@ class WhatsAppTests(LafiyaTestCase):
 
     def test_voice_note_transcribed_by_natlas_and_answered(self):
         contact = self.onboard()
-        FakeGateway.requests.clear()
+        self.fake.requests.clear()
         self.post(NumMedia="1", MediaUrl0=self.base + "/media/1", MediaContentType0="audio/ogg")
-        asr = [r for r in FakeGateway.requests if r[0] == "/v1/audio/transcriptions"]
+        asr = [r for r in self.fake.requests if r[0] == "/v1/audio/transcriptions"]
         self.assertEqual(len(asr), 1)
         self.assertIn(b'name="language"\r\n\r\nyo', asr[0][2])  # user's language sent to the ASR
         reply = self.last_reply()

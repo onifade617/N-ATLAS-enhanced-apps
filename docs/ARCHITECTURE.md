@@ -4,6 +4,24 @@ Lafiya is a voice-first community health service. Families ask questions by **Wh
 in Hausa, Yoruba, Igbo, Pidgin or English. **N-ATLaS** transcribes the voice note (official NCAIR ASR models) and writes
 the answer in the person's language, grounded in their own records and WHO/NPHCDA guidance.
 
+## Layers: natlas-health kit → Lafiya
+
+```
+ natlas_health (developer kit, stdlib only)                Lafiya (Django reference app)
+ ├─ client.py      NatlasClient → N-ATLaS gateway  ◄────── navigator/natlas.py   (settings → NatlasClient)
+ ├─ prompts.py     grounded system prompt          ◄────── HealthAssistant.compose (alerts, Care Navigator)
+ ├─ safety.py      danger signs, emergency text    ◄────── navigator/engine.py   (+ admin-defined keywords)
+ ├─ text.py/audio.py  speakable text, WAV→MP3     ◄────── navigator/voice.py    (web + WhatsApp voice replies)
+ ├─ testing.py     MockClient, FakeGateway         ◄────── tests/test_natlas_gateway.py, tests/test_whatsapp.py
+ ├─ evaluate.py    5-language health eval suite
+ ├─ dataset.py     fine-tuning data                ◄────── finetune/seed_from_lafiya.py (Lafiya templates → data)
+ └─ playground.py  browser playground
+```
+
+Every N-ATLaS call Lafiya makes goes through the SDK. The grounding prompt now lives in
+`natlas_health/prompts.py`, so Lafiya, the playground, the eval suite and the fine-tuning data all use the same
+prompt.
+
 ## System overview
 
 ```mermaid
@@ -88,7 +106,7 @@ sequenceDiagram
 | Intelligence Loop alerts | same | Personal alert text per person / LGA / language |
 | `natlas_check` command | `GET /health` + chat + ASR | Connection test and warm-up before demos |
 
-Grounding prompt (`navigator/natlas.py`): the model receives only **facts from the person's records** and **curated
+Grounding prompt (`natlas_health/prompts.py`, used via `navigator/natlas.py`): the model receives only **facts from the person's records** and **curated
 guidance**, and is instructed to reply in the user's language, never diagnose, and refer danger signs.
 
 ## Safety and reliability design

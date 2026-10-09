@@ -1,6 +1,31 @@
-# Lafiya AI — MVP
+# natlas-health: the N-ATLaS developer kit for health apps, with Lafiya AI as its reference app
 
-A multilingual, voice-first community health platform built on **N-ATLAS**. This Django app implements the MVP scope from the
+This repository is **developer infrastructure for [N-ATLaS](https://huggingface.co/NCAIR1/N-ATLaS)**. It helps
+developers integrate, test, evaluate, adapt and deploy N-ATLaS in health applications for English, Hausa, Yoruba,
+Igbo and Nigerian Pidgin. Every part calls the N-ATLaS gateway (chat, ASR, TTS) directly and wraps no other model.
+
+| Developer tool | Command / module | Docs |
+|---|---|---|
+| **Python SDK**: client, typed errors, cold-start retries, language mapping. Standard library only. | `from natlas_health import NatlasClient` | [docs/sdk](docs/sdk/README.md) |
+| **Health safety layer**: grounded prompts, multilingual danger signs, emergency notice, fallback | `HealthAssistant` | [docs/sdk](docs/sdk/README.md#safe-grounded-health-answers) |
+| **Browser playground**: chat, grounded answers, mic → ASR, voices, request inspector, code export | `natlas-health playground` | [docs/sdk](docs/sdk/README.md#playground) |
+| **Evaluation tools**: 20-case 5-language health suite with safety, grounding, language and format checks | `natlas-health eval` | [docs/sdk](docs/sdk/README.md#evaluate) |
+| **Fine-tuning starter kit**: dataset build/validate/split, LoRA/QLoRA script, 200-example seed set | `natlas-health dataset`, `finetune/` | [finetune/README.md](finetune/README.md) |
+| **Testing tools**: offline `MockClient`, local `FakeGateway` (no GPU credit spent in CI) | `natlas_health.testing` | [docs/sdk](docs/sdk/README.md#test-without-a-gpu) |
+| **Bilingual developer docs** with working examples | English · Naijá (Pidgin) | [EN](docs/sdk/README.md) · [PCM](docs/sdk/README.pcm.md) |
+
+```bash
+pip install -e .
+natlas-health playground --mock                     # try it now, no GPU
+NATLAS_BASE_URL=... NATLAS_API_KEY=... natlas-health eval --report report.md
+python examples/quickstart.py --mock
+```
+
+## Reference app: Lafiya AI
+
+Lafiya is a multilingual, voice-first community health platform (Django) **built on natlas-health**. It shows the
+kit in production use. Its whole N-ATLaS integration is [`navigator/natlas.py`](navigator/natlas.py), about 80 lines
+on top of the SDK, and its tests run against the SDK's `FakeGateway`. It implements the MVP scope from the
 concept brief (`Lafiya_AI_Pitch.pdf`):
 
 | MVP item | Where |
@@ -9,12 +34,12 @@ concept brief (`Lafiya_AI_Pitch.pdf`):
 | **MamaCare** pregnancy tracker, WHO 8-contact ANC schedule, danger signs, child milestones to age 5 | `mamacare/` · `/mamacare/` |
 | **ImmuniTrack** personal vaccine schedule, reminders, coverage-gap / zero-dose mapping | `immunitrack/` · `/immunitrack/` |
 | **ClimateGuard** live weather → malaria, heat and flood risk per LGA, with transparent thresholds | `climateguard/` · `/climate/` |
-| **Personalised alerts** — the Intelligence Loop (Sense → Match → Speak → Act → See) | `alerts/engine.py` · `/alerts/` |
-| **Facility finder** — nearest open facility by service | `core/geo.py` · `/facilities/` |
-| **Government dashboard** — LGA map, coverage gaps, climate risk, impact metrics, CSV export, open API | `dashboard/` · `/gov/`, `/api/v1/` |
-| Health-worker view — due/overdue lists, high-risk weeks, referrals, household enrolment | `/worker/` |
-| **WhatsApp voice notes** — onboarding, N-ATLaS speech-to-text, answers, alert push | `navigator/whatsapp.py` · `/whatsapp/twilio/` |
-| Real-world validation evidence (NAIC PS02) | `dashboard/evidence.py` · `/gov/`, `export_evidence` |
+| **Personalised alerts**: the Intelligence Loop (Sense → Match → Speak → Act → See) | `alerts/engine.py` · `/alerts/` |
+| **Facility finder**: nearest open facility by service | `core/geo.py` · `/facilities/` |
+| **Government dashboard**: LGA map, coverage gaps, climate risk, impact metrics, CSV export, open API | `dashboard/` · `/gov/`, `/api/v1/` |
+| Health-worker view: due/overdue lists, high-risk weeks, referrals, household enrolment | `/worker/` |
+| **WhatsApp voice notes**: onboarding, N-ATLaS speech-to-text, answers, alert push | `navigator/whatsapp.py` · `/whatsapp/twilio/` |
+| Real-world validation evidence | `dashboard/evidence.py` · `/gov/`, `export_evidence` |
 
 ## Quick start
 
@@ -35,7 +60,7 @@ Open http://127.0.0.1:8000. All demo accounts use the password `lafiya123`:
 | `chw` | Health worker, Ibadan North PHC | Due/overdue lists, record vaccines/ANC, complete referrals |
 | `gov` | Government partner + Django admin | Live dashboard, export, open API, run the loop |
 
-Run the tests: `python manage.py test tests`
+Run the tests (Lafiya + SDK, no GPU needed): `python manage.py test tests`
 
 ## Daily job
 
@@ -101,7 +126,8 @@ with an active session. Setup (Twilio sandbox + tunnel): see [docs/NAIC_SUBMISSI
 
 ## NAIC 2026 submission
 
-Lafiya targets Problem Statement 02 (Voice-First Access). See [docs/NAIC_SUBMISSION.md](docs/NAIC_SUBMISSION.md) for the
+This branch targets **Problem Statement 01, Developer Infrastructure**. See [docs/NAIC_PS01.md](docs/NAIC_PS01.md).
+The earlier Voice-First Access (PS02) plan is kept in [docs/NAIC_SUBMISSION.md](docs/NAIC_SUBMISSION.md), with its
 requirement checklist, validation protocol and video outline, and [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for the
 architecture and N-ATLaS integration points. `python manage.py export_evidence` exports the anonymised log of real
 interactions (demo data excluded); set `LAFIYA_CHALLENGE_MODE=1` so voice input only uses N-ATLaS ASR.

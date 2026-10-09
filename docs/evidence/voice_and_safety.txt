@@ -1,0 +1,12 @@
+## speak (ha) -> docs/evidence/voice_ha.wav
+Wrote docs/evidence/voice_ha.wav (209964 bytes, voice ha, 9703 ms)
+
+## transcribe that clip with the Hausa ASR model
+sannu ku kai yarinku asibiti domin alurar riga-kafi a wannan mako.
+[ASR ha · 7843 ms]
+
+## safety layer on the Igbo emergency case the raw model missed
+Nke a nwere ike ịbụ ihe ịrịba ama dị ize ndụ. Gaa n'ụlọ ọgwụ kacha nso UGBU A ma ọ bụ kpọọ 112.
+
+Ọ dị mma, nwaanyị. Ị bụ́ afọ iri anọ na abụọ n’ime ime, ma ọ ka bụ oge iji gaa n’ihu. Biko gaa n'ụlọọgwụ kacha nso ozugbo ma ọ bụ kpọọ 112 maka enyemaka.
+[n-atlas · emergency=True · 3485 ms]

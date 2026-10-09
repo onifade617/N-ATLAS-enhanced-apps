@@ -5,3 +5,8 @@ db.sqlite3
 staticfiles/
 .venv/
 venv/
+build/
+*.egg-info/
+runs/
+*.wav
+!docs/evidence/*.wav
