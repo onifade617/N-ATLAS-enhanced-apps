@@ -112,7 +112,7 @@ Gateway URL:      {url}
 Your API key:     {key}
 
 Keep the key private: it is yours alone and stops working after the beta.
-Tester guide (about 90 minutes): https://github.com/onifade617/N-ATLAS-enhanced-apps/blob/main/docs/beta/TESTER_GUIDE.md
+Tester guide (about 30 minutes): https://github.com/onifade617/N-ATLAS-enhanced-apps/blob/main/docs/beta/TESTER_GUIDE.md
 Feedback form (use your tester ID): {form}
 Live session: {session}
 

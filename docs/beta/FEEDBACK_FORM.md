@@ -20,18 +20,18 @@ Questions marked * are required.
 8. Do you work in or for health / health-tech? [Yes / No]
 9. State [dropdown or short text]
 
-## Section 3: tasks
+## Section 3: steps
 
-For each of tasks 1–6: **Did it work?** [Yes / Yes with help / No / Skipped] and **minutes taken** [number].
+For each step: **Did it work?** [Yes / Yes with help / No / Skipped] and **minutes taken** [number].
 
-10. Task 1: install and offline run
-11. Task 2: first real N-ATLaS call
-12. Task 3: grounded answer + danger sign
-13. Task 4: playground (chat / voice)
-14. Task 5: build something small
-15. Task 6: evaluation
-16. Link to what you built in task 5 (gist/repo), if you are happy to share [short text]
-17. Your 2 new evaluation cases (task 6) [paragraph]
+10. Step 1: install
+11. Step 2: connect with your key (health check OK)
+12. Step 3: talk to N-ATLaS (chat, vaccine question, emergency question)
+13. Did the emergency question start with an emergency message (go to hospital / call 112)? [Yes / No / Didn't try]
+14. Step 4: playground: sample case
+15. Step 4: playground: voice (record + speak)
+16. Optional: if you built anything with natlas-health, share a link [short text]
+17. Optional: write a health question in your language that N-ATLaS answered badly [paragraph]
 
 ## Section 4: ratings (1 = very poor, 5 = excellent)
 
@@ -51,6 +51,6 @@ For each of tasks 1–6: **Did it work?** [Yes / Yes with help / No / Skipped] a
 27. \* Where did you get stuck or confused? Paste error messages exactly. [paragraph]
 28. What would you need before you could use this in production? [paragraph]
 29. What did you like most? [paragraph]
-30. Task 7, language review: anything wrong or unnatural in your language? Quote the line and suggest a fix.
+30. Anything wrong or unnatural in the replies or messages in your language? Quote it and suggest a fix.
     [paragraph]
 31. May we quote your answers to 27–30 (with or without your name, per question 2)? [Yes / No]

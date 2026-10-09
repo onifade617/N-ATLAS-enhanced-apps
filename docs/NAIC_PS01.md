@@ -38,7 +38,7 @@ shows the kit working in production.
 | Working artefact: repository with SDK, CLI, playground, eval, fine-tuning kit, reference app | ✅ built; 86 automated tests pass without a GPU, plus a contract run against the real N-ATLAS-Kit gateway code (GPU parts stubbed) |
 | N-ATLaS integration evidence: live gateway health, 5-language eval, voice round trip, safety layer | ✅ [docs/evidence/](evidence/README.md), 9 Oct 2026: 20 cases, 0 errors, 75% pass (EN/HA 100%) |
 | Technical documentation | ✅ `docs/sdk/`, `finetune/README.md`, `docs/ARCHITECTURE.md` |
-| Developer beta with real users | ⚠️ kit ready in [docs/beta/](beta/README.md): per-tester keys, usage report from gateway logs, tester guide, form, report template; run 10–11 Oct |
+| Developer beta with real users | ⚠️ ready: [tester guide](beta/TESTER_GUIDE.md), per-tester keys and usage report (`scripts/beta/`); run 10–11 Oct |
 | Bilingual docs reviewed by a fluent Pidgin speaker | ⚠️ draft; needs review | (assign to beta task 7) |
 | Native-speaker review of the Hausa/Yoruba/Igbo eval questions, keywords and seed data | ⚠️ draft; needs review |
 | LoRA training run | ❌ not run (needs a GPU); the script is written but untested |

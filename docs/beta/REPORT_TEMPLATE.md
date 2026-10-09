@@ -33,14 +33,14 @@ Between … and … October 2026, **… Nigerian developers** tested natlas-heal
 
 ## Results
 
-| Task | Completed (unaided + with help) | Median minutes |
+| Step | Completed (unaided + with help) | Median minutes |
 |---|---|---|
-| 1 Install + offline run | … | … |
-| 2 First live N-ATLaS call | … | … |
-| 3 Grounded answer + danger sign | … | … |
-| 4 Playground | … | … |
-| 5 Build something | … | … |
-| 6 Evaluation | … | … |
+| 1 Install | … | … |
+| 2 Connect (first live N-ATLaS response) | … | … |
+| 3 Chat, grounded answer, emergency question | … | … |
+| 4 Playground (sample case, voice) | … | … |
+
+Emergency message shown for the danger-sign question: … of … testers.
 
 | Rating (1–5 unless stated) | Mean | n |
 |---|---|---|
@@ -52,7 +52,7 @@ Between … and … October 2026, **… Nigerian developers** tested natlas-heal
 **Usage (gateway logs):** … requests (… chat, … speech-to-text, … speech) by … testers on … days, with …%
 success. See [usage_report.md](usage_report.md).
 
-**What testers built:** a list of links or short descriptions.
+**What testers built (optional):** links or short descriptions, if any.
 
 ## What we learned and fixed
 

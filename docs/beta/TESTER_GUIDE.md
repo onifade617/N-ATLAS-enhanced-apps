@@ -1,112 +1,72 @@
-# natlas-health beta: tester guide
+# Help test natlas-health (about 30 minutes)
 
-Thank you for testing **natlas-health**, an open developer kit for building health apps on
-[N-ATLaS](https://huggingface.co/NCAIR1/N-ATLaS), Nigeria's multilingual language model. It covers English,
-Hausa, Yoruba, Igbo and Pidgin. Your job is to try it like a developer would and tell us honestly where it is
-hard. Finding problems is the point.
+natlas-health is a free toolkit that makes it easy to build health apps on N-ATLaS, Nigeria's AI language
+model, in English, Hausa, Yoruba, Igbo and Pidgin. Please try it and tell us honestly what was hard.
 
-**Time:** about 90 minutes. **You need:** Python 3.9 or newer and a terminal. A microphone is optional
-(task 4). **Your tester id** (e.g. `T03`) and **API key** come to you privately from the organiser.
+You need Python 3.9 or newer, plus your **tester ID** and **API key**, which come from me privately. Use
+made-up details only. The system never records what you type or say.
 
-**Privacy and safety:**
-- The N-ATLaS gateway logs only *which feature and language* you used and how long it took, under a
-  fingerprint of your key. It never logs your prompts, replies or audio.
-- Use **made-up** people and data only. This is a developer test, not medical advice.
-- Don't share your key. It stops working after the beta.
+## Step 1: install
 
-**Write down the time** when you start each task and when it works, and note anything confusing. The form
-at the end asks for this.
-
----
-
-## Task 1: install and run offline (no key needed)
+Open a terminal (on Windows, PowerShell) and run:
 
 ```bash
 pip install "git+https://github.com/onifade617/N-ATLAS-enhanced-apps"
-#   or, if you were sent a .whl file:  pip install natlas_health-0.1.0-py3-none-any.whl
-natlas-health --version
-natlas-health ask "Which vaccine does my baby need next?" --fact "Child: Tobi, 6 weeks" --mock
 ```
 
-`--mock` uses an offline fake, so nothing reaches N-ATLaS yet. Docs: [English](../sdk/README.md) ·
-[Naijá](../sdk/README.pcm.md).
+## Step 2: connect with your key
 
-## Task 2: your first real N-ATLaS call
+Windows PowerShell:
+
+```powershell
+$env:NATLAS_BASE_URL="<URL from my message>"
+$env:NATLAS_API_KEY="<your key>"
+```
+
+Mac/Linux:
 
 ```bash
-# macOS/Linux                                   # Windows PowerShell
-export NATLAS_BASE_URL=<url from organiser>      $env:NATLAS_BASE_URL="<url>"
-export NATLAS_API_KEY=<your key>                 $env:NATLAS_API_KEY="<your key>"
+export NATLAS_BASE_URL="<URL from my message>"
+export NATLAS_API_KEY="<your key>"
+```
 
+Then:
+
+```bash
 natlas-health health --timeout 600
-natlas-health chat "Greet me in one sentence." --language yo     # try your own language: ha, yo, ig, pcm, en
 ```
 
-If `health` waits a while, the GPU is waking up (a "cold start", up to a few minutes). That's normal. Tell us
-if the message you saw didn't explain it.
+The first time can take 2–3 minutes while the AI wakes up. Wait until it says `OK`.
 
-## Task 3: a safe, grounded health answer in Python
+## Step 3: talk to N-ATLaS
 
-Save this as `try_it.py`, change the language, question and facts, and run it:
-
-```python
-from natlas_health import NatlasClient, HealthAssistant
-
-assistant = HealthAssistant(NatlasClient.from_env())
-answer = assistant.answer(
-    "When is my next antenatal visit?",            # try asking in Hausa, Yoruba, Igbo or Pidgin
-    language="en",
-    facts=["The person is 25 weeks pregnant.", "Next antenatal visit: 20 Oct 2026 at Dala PHC (0.8 km)."],
-)
-print(answer.text)
-print(answer.generated_by, answer.emergency)
-```
-
-Then ask about a **danger sign**, e.g. "I am pregnant and bleeding" (or in your language). Check that the
-reply starts with an emergency notice. Does the rest of the answer make sense?
-
-## Task 4: the playground
+Use your language: `ha`, `yo`, `ig`, `pcm` or `en`.
 
 ```bash
-natlas-health playground          # open http://127.0.0.1:8765
+natlas-health chat "Greet me in one sentence." --language yo
+natlas-health ask "Which vaccine does my baby need next?" --language yo --fact "Child: Tobi, 6 weeks old"
+natlas-health ask "I am pregnant and I am bleeding" --language yo
 ```
 
-- **Health answer:** load a sample case in your language and press *Ask N-ATLaS*. Look at the check badges
-  and "Request sent to N-ATLaS".
-- **Voice:** record yourself asking a short question (mic), then press *Speak* to hear a reply voice.
-- Copy the **Python** snippet it shows. Does it run as-is?
+The last one should start with an emergency message telling the person to go to a hospital or call 112.
+Did it?
 
-## Task 5: build something small (20–40 minutes)
-
-Pick one, or invent your own:
-
-- a FastAPI/Flask/Django endpoint `POST /ask` that answers a health question with `HealthAssistant`;
-- a command-line "vaccine reminder" that reads a child's details and writes the message in Hausa or Yoruba;
-- a script that transcribes a voice note (`client.transcribe("note.ogg", language="ha")`) and answers it.
-
-Share a gist or repo link in the form. It doesn't have to be pretty.
-
-## Task 6: evaluate
+## Step 4: try the playground
 
 ```bash
-natlas-health eval --language yo --language pcm --report my_eval.md     # pick 1–2 languages (about 8 calls)
+natlas-health playground
 ```
 
-Read the failures in `my_eval.md`. Do you agree with them? Then write **2 new test cases** in your language,
-in the same format as the lines in
-[`health_eval.jsonl`](../../natlas_health/data/health_eval.jsonl), and paste them into the form.
+Open http://127.0.0.1:8765 in your browser, then:
 
-## Task 7 (fluent speakers of Hausa, Yoruba, Igbo or Pidgin): language review
+- pick a sample case and press **Ask N-ATLaS**;
+- on the **Voice** tab, record a short question, then press **Speak** to hear a reply.
 
-Pick what matches your language and note anything wrong or unnatural:
+Press Ctrl+C in the terminal when you're done.
 
-- the questions for your language in `natlas_health/data/health_eval.jsonl`;
-- the emergency message and danger-sign words in `natlas_health/safety.py`;
-- for Pidgin: [docs/sdk/README.pcm.md](../sdk/README.pcm.md).
+## Step 5: tell me how it went
 
-## Finally: the feedback form (10 min)
+Fill in the feedback form from my message, using your tester ID. If anything failed, copy the exact error
+text into the form.
 
-Fill the form the organiser sent, using your tester id. Report bugs there or as a GitHub issue. Copy any
-error text exactly.
-
-Budget: please stay under about 150 requests. The GPU is paid for by a small team.
+Thank you!
