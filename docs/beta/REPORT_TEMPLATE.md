@@ -44,9 +44,10 @@ Emergency message shown for the danger-sign question: … of … testers.
 
 | Rating (1–5 unless stated) | Mean | n |
 |---|---|---|
-| Ease of first answer | … | … |
-| Documentation clarity | … | … |
-| Usefulness of the safety layer | … | … |
+| Ease of getting started | … | … |
+| Clarity of the guide | … | … |
+| Quality of replies in testers' languages | … | … |
+| Voice features | … | … |
 | Likely to use in a real project (0–10) | … | … |
 
 **Usage (gateway logs):** … requests (… chat, … speech-to-text, … speech) by … testers on … days, with …%
