@@ -9,7 +9,7 @@ every day of the beta (fetching logs does not start a GPU):
 
 Then:
 
-    python scripts/beta/usage.py beta_private/logs/ -o docs/beta/usage_report.md
+    python scripts/beta/usage.py beta_private/logs/ --since 2026-10-09T12:31 -o docs/beta/usage_report.md
 
 Testers appear by tester id (T01, T02...) from beta_private/roster.csv; pass --names for a private view.
 Requests made with your own key (.env) are reported separately, not counted as beta usage.
@@ -120,9 +120,13 @@ def main():
     p.add_argument("logs", nargs="+", help="log files or folders")
     p.add_argument("-o", "--output", help="write the Markdown report here")
     p.add_argument("--names", action="store_true", help="show tester names (private use only; do not publish)")
+    p.add_argument("--since", help="ignore requests before this UTC time, e.g. 2026-10-09T12:31 (excludes setup tests)")
     args = p.parse_args()
     roster = read_roster()
     records = read_requests(args.logs)
+    if args.since:
+        cutoff = dt.datetime.fromisoformat(args.since).replace(tzinfo=dt.timezone.utc).timestamp()
+        records = [r for r in records if r.get("ts", 0) >= cutoff]
     if not records:
         sys.exit("No gateway request records found in those files.")
     key = owner_key()
