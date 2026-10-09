@@ -4,7 +4,7 @@ The gateway logs one JSON line per request (feature, language, status, latency, 
 never the prompt, reply, audio or key. Modal keeps logs for only 1 day on the Starter plan, so save them
 every day of the beta (fetching logs does not start a GPU):
 
-    modal app logs natlas-serve --since 1d --search '"event":"request"' --tail 100000 \
+    modal app logs natlas-serve --since 1d --search '"event":"request"' --tail 20000 \
         > beta_private/logs/$(date +%F).jsonl
 
 Then:
