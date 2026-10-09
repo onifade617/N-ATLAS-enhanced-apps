@@ -134,7 +134,64 @@ def cmd_invites(args):
         with open(os.path.join(out, f"{r['tester_id']}.txt"), "w", encoding="utf-8") as fh:
             fh.write(f"To: {r['contact'] or r['name']}\n\n{text}")
         n += 1
+    page = write_send_page(out, args)
     print(f"Wrote {n} invites to {out}. Send each one privately (email or direct message), never in a group.")
+    print(f"One-click sending: open {page} in your browser.")
+
+
+def write_send_page(out, args):
+    """A private local page with, per tester, a Gmail draft / WhatsApp chat pre-filled with their invite."""
+    import html
+    import urllib.parse
+
+    url, cards = gateway_url(), []
+    for r in read_roster():
+        if r["revoked"]:
+            continue
+        first = r["name"].split()[0] if r["name"].split() else r["name"]
+        body = INVITE.format(first=first, tester_id=r["tester_id"], url=url, key=r["key"],
+                             form=args.form, session=args.session)
+        contact = r["contact"].strip()
+        buttons = []
+        if "@" in contact:
+            gmail = "https://mail.google.com/mail/?" + urllib.parse.urlencode(
+                {"view": "cm", "fs": "1", "to": contact, "su": "Help me test natlas-health (your personal invite)",
+                 "body": body})
+            buttons.append(f'<a class="btn" target="_blank" rel="noopener" href="{html.escape(gmail)}">Open in Gmail</a>')
+        digits = "".join(ch for ch in contact if ch.isdigit())
+        if "@" not in contact and len(digits) >= 10:
+            if digits.startswith("0") and len(digits) == 11:  # Nigerian local format 080... -> 23480...
+                digits = "234" + digits[1:]
+            wa = f"https://wa.me/{digits}?" + urllib.parse.urlencode({"text": body})
+            buttons.append(f'<a class="btn" target="_blank" rel="noopener" href="{html.escape(wa)}">Open in WhatsApp</a>')
+        buttons.append(f'<button class="btn" onclick="copy(\'{r["tester_id"]}\')">Copy message</button>')
+        cards.append(f"""<section>
+  <h2>{html.escape(r['tester_id'])} · {html.escape(r['name'])}</h2>
+  <p class="to">{html.escape(contact or 'no contact on file')}</p>
+  <div class="row">{''.join(buttons)} <label><input type="checkbox"> sent</label></div>
+  <pre id="{html.escape(r['tester_id'])}">{html.escape(body)}</pre>
+</section>""")
+    page = os.path.join(out, "send.html")
+    with open(page, "w", encoding="utf-8") as fh:
+        fh.write(f"""<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Send beta invites</title>
+<style>
+body{{font:15px/1.5 system-ui,sans-serif;max-width:820px;margin:24px auto;padding:0 16px;color:#1a1a1a;background:#fafaf8}}
+section{{background:#fff;border:1px solid #ddd;border-radius:8px;padding:14px 16px;margin:14px 0}}
+h2{{font-size:16px;margin:0}} .to{{color:#666;margin:2px 0 10px}} .row{{display:flex;gap:8px;align-items:center;flex-wrap:wrap}}
+.btn{{background:#0b6e4f;color:#fff;border:0;border-radius:6px;padding:7px 14px;text-decoration:none;font:inherit;cursor:pointer}}
+pre{{white-space:pre-wrap;background:#f3f2ee;padding:10px;border-radius:6px;font-size:13px;display:none}}
+.warn{{background:#fff4d6;border:1px solid #f0d27a;padding:10px 14px;border-radius:8px}}
+</style>
+<h1>Send beta invites</h1>
+<p class="warn">Private: this page contains every tester's key. Keep it on your PC. Each button opens a draft to one
+person only; check it and press Send yourself.</p>
+{''.join(cards)}
+<script>
+function copy(id){{const t=document.getElementById(id).textContent;navigator.clipboard.writeText(t).then(()=>alert('Copied invite for '+id))}}
+</script>
+""")
+    return page
 
 
 def cmd_list(args):
