@@ -4,7 +4,9 @@ The gateway logs every request with ``key = "k_" + sha256(key)[:12]`` and never 
 This script keeps the private roster (name -> key -> fingerprint) in beta_private/roster.csv, which is
 git-ignored, and prints the command that installs the keys on the gateway.
 
+    python scripts/beta/keys.py import testers.csv          # columns: name, contact (e.g. from Google Sheets)
     python scripts/beta/keys.py add "Ada Okafor" "Musa Bello" --contact ada@x.ng --contact musa@y.ng
+    python scripts/beta/keys.py invites --form <form link> --session "Sat 10 Oct, 2 pm, <meet link>"
     python scripts/beta/keys.py list
     python scripts/beta/keys.py revoke "Musa Bello"
     python scripts/beta/keys.py secret        # prints the modal command with your key + every active tester key
@@ -56,10 +58,15 @@ def owner_key():
     return ""
 
 
-def cmd_add(args):
+def add_testers(people):
+    """people: list of (name, contact). Skips names already in the roster."""
     rows = read_roster()
-    contacts = args.contact + [""] * (len(args.names) - len(args.contact))
-    for name, contact in zip(args.names, contacts):
+    known = {r["name"].strip().lower() for r in rows}
+    for name, contact in people:
+        if not name.strip() or name.strip().lower() in known:
+            print(f"skipped {name!r} (empty or already in roster)")
+            continue
+        known.add(name.strip().lower())
         key = secrets.token_hex(32)
         tester_id = f"T{len(rows) + 1:02d}"
         rows.append({"tester_id": tester_id, "name": name, "contact": contact, "fingerprint": fingerprint(key),
@@ -67,6 +74,67 @@ def cmd_add(args):
         print(f"{tester_id}  {name:<24} {fingerprint(key)}")
     write_roster(rows)
     print(f"\nSaved to {ROSTER}. Now run:  python scripts/beta/keys.py secret")
+
+
+def cmd_add(args):
+    contacts = args.contact + [""] * (len(args.names) - len(args.contact))
+    add_testers(list(zip(args.names, contacts)))
+
+
+def cmd_import(args):
+    """CSV with a header row containing 'name' and optionally 'contact' (e.g. exported from Google Sheets)."""
+    with open(args.csv, newline="", encoding="utf-8-sig") as fh:
+        reader = csv.DictReader(fh)
+        cols = {c.lower().strip(): c for c in reader.fieldnames or []}
+        if "name" not in cols:
+            sys.exit("The CSV needs a 'name' column (and optionally 'contact').")
+        people = [((r[cols["name"]] or "").strip(), (r[cols["contact"]] or "").strip() if "contact" in cols else "")
+                  for r in reader]
+    add_testers(people)
+
+
+def gateway_url():
+    path = os.path.join(ROOT, ".env")
+    if os.path.exists(path):
+        with open(path, encoding="utf-8") as fh:
+            for line in fh:
+                if line.startswith("NATLAS_BASE_URL="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'")
+    return "<gateway URL>"
+
+
+INVITE = """Hi {first},
+
+Thank you for helping test natlas-health, the open developer kit for N-ATLaS.
+
+Your tester ID:   {tester_id}
+Gateway URL:      {url}
+Your API key:     {key}
+
+Keep the key private: it is yours alone and stops working after the beta.
+Tester guide (about 90 minutes): https://github.com/onifade617/N-ATLAS-enhanced-apps/blob/main/docs/beta/TESTER_GUIDE.md
+Feedback form (use your tester ID): {form}
+Live session: {session}
+
+Use made-up data only. The gateway never records your prompts, replies or audio.
+"""
+
+
+def cmd_invites(args):
+    """Write one private invite per active tester to beta_private/invites/<id>.txt, ready to paste into email/DM."""
+    out = os.path.join(ROOT, "beta_private", "invites")
+    os.makedirs(out, exist_ok=True)
+    url, n = gateway_url(), 0
+    for r in read_roster():
+        if r["revoked"]:
+            continue
+        first = r["name"].split()[0] if r["name"].split() else r["name"]
+        text = INVITE.format(first=first, tester_id=r["tester_id"], url=url, key=r["key"],
+                             form=args.form, session=args.session)
+        with open(os.path.join(out, f"{r['tester_id']}.txt"), "w", encoding="utf-8") as fh:
+            fh.write(f"To: {r['contact'] or r['name']}\n\n{text}")
+        n += 1
+    print(f"Wrote {n} invites to {out}. Send each one privately (email or direct message), never in a group.")
 
 
 def cmd_list(args):
@@ -104,6 +172,13 @@ def main():
     a.add_argument("names", nargs="+")
     a.add_argument("--contact", action="append", default=[], help="email/phone, in the same order as names")
     a.set_defaults(func=cmd_add)
+    i = sub.add_parser("import", help="add many testers from a CSV with 'name' and 'contact' columns")
+    i.add_argument("csv")
+    i.set_defaults(func=cmd_import)
+    v = sub.add_parser("invites", help="write one private invite message per tester")
+    v.add_argument("--form", default="<feedback form link>")
+    v.add_argument("--session", default="<date, time and meeting link>")
+    v.set_defaults(func=cmd_invites)
     sub.add_parser("list").set_defaults(func=cmd_list)
     r = sub.add_parser("revoke")
     r.add_argument("name", help="name or tester id")
