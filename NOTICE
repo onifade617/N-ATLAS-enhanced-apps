@@ -1,0 +1,43 @@
+natlas-health and Lafiya AI
+Copyright 2026 Onifade Monsuru Olanrewaju and contributors
+
+Licensed under the Apache License, Version 2.0. See the LICENSE file.
+The Apache-2.0 licence applies to the source code in this repository only.
+
+================================================================================
+THIRD-PARTY MODELS - NOT COVERED BY THIS REPOSITORY'S LICENSE
+================================================================================
+
+This repository contains no model weights. It calls N-ATLaS (NCAIR1/N-ATLaS) and the
+NCAIR Hausa, Igbo, Yoruba and Nigerian-accented English ASR models through an
+N-ATLAS-Kit gateway. Those models are published by Awarri Technologies and the Federal
+Ministry of Communications, Innovation and Digital Economy (NCAIR / NITDA) under their
+own licence and terms of use. N-ATLaS is free for organisations with up to 1,000 monthly
+active users; larger deployments need a commercial licence from Awarri. Applications must
+show the attribution "Powered by N-ATLaS".
+
+The spoken replies use MMS-TTS voices, which are licensed CC-BY-NC 4.0 (non-commercial).
+
+================================================================================
+THIRD-PARTY DATA - UNDER THEIR OWN LICENCES
+================================================================================
+
+core/data/nigeria_lgas.csv
+  Nigeria Subnational Administrative Boundaries (COD-AB v01): OSGOF, eHealth Africa and
+  UN Cartographic Section, published by OCHA on HDX. CC BY-IGO 3.0.
+  https://data.humdata.org/dataset/cod-ab-nga
+
+core/data/nigeria_health_facilities.csv.gz
+  GRID3 Nigeria Health Facilities v3.0 and v2.0, built from the Nigeria Health Facility
+  Registry, NPHCDA and field surveys. CC BY 4.0.
+  https://data.humdata.org/dataset/grid3-nga-health-facilities-v3-0
+  https://data.humdata.org/dataset/grid3-nga-health-facilities-v2-0
+
+Weather data in Lafiya comes from Open-Meteo (CC BY 4.0) at runtime.
+
+================================================================================
+SOFTWARE THIS PROJECT WORKS WITH
+================================================================================
+
+N-ATLAS Kit (https://github.com/Kambah123/N-ATLAS-Kit), Apache-2.0, serves the gateway
+this project talks to. It is not bundled here.

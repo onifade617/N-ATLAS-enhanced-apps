@@ -13,6 +13,9 @@ Igbo and Nigerian Pidgin. Every part calls the N-ATLaS gateway (chat, ASR, TTS) 
 | **Fine-tuning starter kit**: dataset build/validate/split, LoRA/QLoRA script, 200-example seed set | `natlas-health dataset`, `finetune/` | [finetune/README.md](finetune/README.md) |
 | **Testing tools**: offline `MockClient`, local `FakeGateway` (no GPU credit spent in CI) | `natlas_health.testing` | [docs/sdk](docs/sdk/README.md#test-without-a-gpu) |
 | **Bilingual developer docs** with working examples | English · Naijá (Pidgin) | [EN](docs/sdk/README.md) · [PCM](docs/sdk/README.pcm.md) |
+| **Evidence and beta programme**: live-gateway run, per-tester usage from gateway logs | `docs/evidence/`, `scripts/beta/` | [evidence](docs/evidence/README.md) · [beta](docs/beta/README.md) |
+
+Licence: Apache-2.0 for the code ([LICENSE](LICENSE)); models and datasets keep their own terms ([NOTICE](NOTICE)) · Contributing: [CONTRIBUTING.md](CONTRIBUTING.md) · Changes: [CHANGELOG.md](CHANGELOG.md)
 
 ```bash
 pip install -e .
