@@ -10,9 +10,7 @@ Flow for each question:
  5. Act: book reminders, suggest referrals, return facilities for the map.
 """
 
-import re
 import time
-import unicodedata
 from datetime import date, timedelta
 
 from alerts.models import Alert
@@ -23,23 +21,12 @@ from core.models import SERVICE_NAMES
 from immunitrack.services import next_due
 from mamacare.models import DangerSign, Milestone
 
+from natlas_health.safety import DANGER_KEYWORDS, matches, normalize
+
 from . import natlas
 from .knowledge import SOURCES, SYMPTOMS, TOPICS
 from .models import Conversation, Message, Referral
 from .phrases import phrase
-
-# Trailing "*" = prefix match; otherwise whole word/phrase. All keys are accent-free.
-DANGER_KEYWORDS = [
-    "bleeding", "bleed*", "convuls*", "fits", "seizure*", "unconscious", "fainted", "fainting",
-    "not breathing", "difficulty breathing", "breathing fast", "fast breathing", "chest indrawing",
-    "severe headache", "blurred vision", "swollen face", "swelling of face", "water broke", "waters broke",
-    "baby not moving", "not moving", "not feeding", "cannot feed", "unable to drink", "cannot drink",
-    "stiff neck", "severe abdominal pain", "severe pain",
-    "blood dey comma", "blood dey come", "dey shake", "no dey breathe", "pikin no dey move",
-    "eje n jade", "eje jade", "eje n da", "giri", "daku",
-    "zubar jini", "jini na fita", "farfadiya", "suma", "ba ya numfashi",
-    "obara na-agba", "obara na agba", "obara na-asa",
-]
 
 INTENTS = [
     ("vaccine", ["vaccin*", "immuni*", "injection*", "jab*", "ajesara", "abere", "rigakafi", "allura*", "mgbochi"]),
@@ -115,23 +102,8 @@ TOPIC_ONLY_INTENTS = {
 SYMPTOM_FOR_INTENT = {"fever": "fever", "diarrhoea": "diarrhoea", "cough": "cough", "headache": "headache"}
 
 
-def normalize(text):
-    text = unicodedata.normalize("NFKD", text.lower())
-    text = "".join(c for c in text if not unicodedata.combining(c))
-    return re.sub(r"\s+", " ", text).strip()
-
-
-def _kw_regex(kw):
-    if kw.endswith("*"):
-        return r"\b" + re.escape(kw[:-1])
-    return r"\b" + re.escape(kw) + r"\b"
-
-
-def matches(norm_text, keywords):
-    return any(re.search(_kw_regex(normalize(k)), norm_text) for k in keywords)
-
-
 def detect_danger(norm_text):
+    """The SDK's multilingual danger signs plus any keywords health workers add in the admin."""
     keywords = list(DANGER_KEYWORDS)
     for ds in DangerSign.objects.exclude(keywords=""):
         keywords.extend(k.strip() for k in ds.keywords.split(",") if k.strip())

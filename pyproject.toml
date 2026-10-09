@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "natlas-health"
+version = "0.1.0"
+description = "Developer kit for health applications on N-ATLaS: SDK, safety layer, playground, evaluation and fine-tuning tools."
+readme = "docs/sdk/README.md"
+requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
+authors = [{ name = "Lafiya AI" }]
+keywords = ["N-ATLaS", "Nigeria", "Hausa", "Yoruba", "Igbo", "Pidgin", "health", "LLM", "ASR", "TTS"]
+dependencies = []  # the SDK is standard-library only
+
+[project.optional-dependencies]
+audio = ["lameenc>=1.7"]
+finetune = ["torch", "transformers>=4.44", "peft>=0.12", "trl>=0.20", "datasets>=2.20", "accelerate", "bitsandbytes"]
+
+[project.scripts]
+natlas-health = "natlas_health.cli:main"
+
+[tool.setuptools]
+packages = ["natlas_health"]
+
+[tool.setuptools.package-data]
+natlas_health = ["data/*.jsonl", "static/*.html"]

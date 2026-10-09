@@ -1,15 +1,14 @@
-"""Exercise the N-ATLaS client against a fake gateway that mimics the documented N-ATLAS-Kit routes."""
+"""Lafiya against the SDK's FakeGateway, which mimics the documented N-ATLAS-Kit routes."""
 
 import json
-import threading
 from datetime import date
-from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import override_settings
 
 from alerts.engine import run_loop
 from alerts.models import Alert
+from natlas_health.testing import WAV, FakeGateway
 from navigator import natlas
 from navigator.engine import respond
 from navigator.models import VoiceClip
@@ -20,89 +19,23 @@ from .test_lafiya import LafiyaTestCase
 KEY = "test-key"
 
 
-def make_wav(seconds=0.5, rate=16000):
-    import io
-    import math
-    import struct
-    import wave
-
-    buf = io.BytesIO()
-    with wave.open(buf, "wb") as w:
-        w.setnchannels(1)
-        w.setsampwidth(2)
-        w.setframerate(rate)
-        w.writeframes(b"".join(struct.pack("<h", int(6000 * math.sin(i / 8))) for i in range(int(seconds * rate))))
-    return buf.getvalue()
-
-
-WAV = make_wav()
-
-
-class FakeGateway(BaseHTTPRequestHandler):
-    requests = []
-
-    def log_message(self, *args):
-        pass
-
-    def _send(self, code, body):
-        data = json.dumps(body).encode()
-        self.send_response(code)
-        self.send_header("Content-Type", "application/json")
-        self.send_header("Content-Length", str(len(data)))
-        self.end_headers()
-        self.wfile.write(data)
-
-    def do_GET(self):
-        if self.path == "/health":
-            return self._send(200, {"status": "ok", "llm": "NCAIR1/N-ATLaS", "asr": ["ha", "ig", "yo", "en"]})
-        self._send(404, {"error": "not found"})
-
-    def do_POST(self):
-        body = self.rfile.read(int(self.headers.get("Content-Length", 0)))
-        FakeGateway.requests.append((self.path, self.headers, body))
-        if self.headers.get("Authorization") != f"Bearer {KEY}":
-            return self._send(401, {"error": "Missing or invalid API key"})
-        if self.path == "/v1/chat/completions":
-            payload = json.loads(body)
-            return self._send(200, {"choices": [{"message": {"content": f"N-ATLaS reply ({payload.get('language', '-')})"}}]})
-        if self.path == "/v1/audio/speech":
-            payload = json.loads(body)
-            if not payload.get("input"):
-                return self._send(400, {"error": "empty"})
-            self.send_response(200)
-            self.send_header("Content-Type", "audio/wav")
-            self.send_header("X-Natlas-Voice", f"mms-tts-{payload.get('language')}")
-            self.send_header("Content-Length", str(len(WAV)))
-            self.end_headers()
-            self.wfile.write(WAV)
-            return
-        if self.path == "/v1/audio/transcriptions":
-            if b'name="file"' not in body:
-                return self._send(400, {"error": "file required"})
-            lang = body.split(b'name="language"\r\n\r\n')[1].split(b"\r\n")[0].decode()
-            return self._send(200, {"text": f"transcript-{lang}"})
-        self._send(404, {"error": "not found"})
-
-
 class GatewayTests(LafiyaTestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.server = ThreadingHTTPServer(("127.0.0.1", 0), FakeGateway)
-        threading.Thread(target=cls.server.serve_forever, daemon=True).start()
-        cls.base = f"http://127.0.0.1:{cls.server.server_port}"
+        cls.fake = FakeGateway(api_key=KEY).start()
+        cls.base = cls.fake.url
 
     @classmethod
     def tearDownClass(cls):
-        cls.server.shutdown()
-        cls.server.server_close()
+        cls.fake.stop()
         super().tearDownClass()
 
     def gateway(self, key=KEY, base=None):
         return override_settings(NATLAS={"API_URL": base or self.base, "API_KEY": key, "MODEL": "NCAIR1/N-ATLaS", "TIMEOUT": 5})
 
     def setUp(self):
-        FakeGateway.requests.clear()
+        self.fake.requests.clear()
 
     def test_endpoint_accepts_any_base_form(self):
         for base in (self.base, self.base + "/", self.base + "/v1", self.base + "/v1/chat/completions"):
@@ -122,7 +55,7 @@ class GatewayTests(LafiyaTestCase):
             r = respond(self.funke, "Which vaccine does my baby need next?", language="yo")
         self.assertEqual(r["generated_by"], "n-atlas")
         self.assertEqual(r["reply"], "N-ATLaS reply (yo)")
-        path, headers, body = FakeGateway.requests[-1]
+        path, headers, body = self.fake.requests[-1]
         payload = json.loads(body)
         self.assertEqual(path, "/v1/chat/completions")
         self.assertEqual(payload["model"], "NCAIR1/N-ATLaS")
@@ -132,7 +65,7 @@ class GatewayTests(LafiyaTestCase):
     def test_pidgin_language_not_sent_to_gateway(self):
         with self.gateway():
             respond(self.funke, "Which vaccine my pikin need next?", language="pcm")
-        self.assertNotIn("language", json.loads(FakeGateway.requests[-1][2]))
+        self.assertNotIn("language", json.loads(self.fake.requests[-1][2]))
 
     def test_emergency_prefix_kept_when_model_answers(self):
         with self.gateway():
@@ -194,8 +127,8 @@ class GatewayTests(LafiyaTestCase):
                                     content_type="application/json").json()
             res = self.client.post("/navigator/api/speak/", json.dumps({"message_id": data["message_id"]}),
                                    content_type="application/json").json()
-        self.assertEqual(res["voice"], "mms-tts-yo")
-        spoken = [json.loads(b) for p, _, b in FakeGateway.requests if p == "/v1/audio/speech"]
+        self.assertEqual(res["voice"], "yo")
+        spoken = [json.loads(b) for p, _, b in self.fake.requests if p == "/v1/audio/speech"]
         self.assertEqual(spoken[-1]["language"], "yo")
         audio = self.client.get(res["url"])
         self.assertEqual(audio["Content-Type"], "audio/mpeg")
