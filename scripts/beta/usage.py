@@ -131,7 +131,8 @@ def main():
         sys.exit("No gateway request records found in those files.")
     key = owner_key()
     rows = summarize(records, roster, fingerprint(key) if key else None, names=args.names)
-    report = render(rows, roster, args.logs)
+    sources = [f for p in args.logs for f in (glob.glob(os.path.join(p, "*")) if os.path.isdir(p) else [p])]
+    report = render(rows, roster, sources)
     if args.output:
         if args.names:
             sys.exit("Refusing to write a report with names; drop --names to publish.")

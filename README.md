@@ -105,8 +105,9 @@ python finetune/train_lora.py --train finetune/data/train.jsonl --eval finetune/
   - the safety layer catching an emergency the raw model missed.
 - **86 automated tests** (`python manage.py test tests`), none needing a GPU, plus a contract test against
   the real N-ATLAS-Kit gateway code.
-- **Developer beta:** each tester gets their own key, and usage is measured from the gateway's
-  content-free logs ([tester guide](docs/beta/TESTER_GUIDE.md)).
+- **Developer beta** ([report](docs/beta/BETA_REPORT.md), 9–12 Oct 2026): 3 Nigerian developers, each with
+  their own key; all 3 reported every step working and a first live N-ATLaS answer in about 2 minutes. Usage is
+  measured from the gateway's content-free logs ([usage report](docs/beta/usage_report.md)).
 - **Deployed in a real app:** [Lafiya AI](docs/LAFIYA.md), a Django community-health platform with web chat,
   WhatsApp voice notes and daily alerts. It runs all its N-ATLaS calls through this kit, in about 80 lines
   ([`navigator/natlas.py`](navigator/natlas.py)).
